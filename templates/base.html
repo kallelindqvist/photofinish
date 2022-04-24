@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    {% block head %}
+        <meta charset="utf-8">
+        <title>{% block title %}Photofinish{% endblock %}</title>
+        <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+        {% block styles %}
+            <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css' ) }}">
+        {% endblock %}
+    {% endblock %}
+</head>
+<body>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        {% block footer %}
+            <small> &copy; 2022 <a href="https://github.com/kallelindqvist/photofinish" title="Fork me on GitHub">GitHub</a> /
+            </small>
+        {% endblock %}
+    </footer>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
