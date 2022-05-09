@@ -1,0 +1,54 @@
+<!doctype html>
+<title>Hello from Flask</title>
+
+
+{% extends 'base.html' %}
+
+{% block content %}
+{% set name='baz' %}
+<h1>Målkamera</h1>
+<div class="parent">
+  <div class="div1">
+
+    <fieldset>
+      <legend>Förhandsgranskning</legend>
+      <img src="{{ url_for('take_photo') }} " width="512" height="512" style="object-fit: scale-down">
+      <button type="button">
+        Uppdatera bild
+      </button>
+      <a href="#">Ladda ner målfilm</a>
+    </fieldset>
+  </div>
+  <div class="div2">
+    <fieldset class="status">
+      <legend>Status</legend>
+      <label>Hundbur</label><span>✅</span>
+      <label>Mål</label><span>✅</span>
+    </fieldset>
+  </div>
+  <div class="div3">
+    <button type="button">
+      Starta race
+    </button>
+    <br />
+    <button type="button">
+      Avsluta race
+    </button>
+  </div>
+  <div class="div4">
+    <form method="post">
+      <fieldset class="settings">
+
+        <legend>Inställningar</legend>
+        <label>Börja filma efter</label><input name="stop_filming_after" type="number" maxlenght="2" value="7" />
+        sekunder
+        <label>Sluta filma efter</label><input name="stat_filming_after" type="number" maxlength="3" value="25" />
+        sekunder
+        <button type="submit">
+          Spara inställningar
+        </button>
+      </fieldset>
+    </form>
+  </div>
+</div>
+{% endblock %}
