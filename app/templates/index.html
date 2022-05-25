@@ -22,8 +22,7 @@
   <div class="div2">
     <fieldset class="status">
       <legend>Status</legend>
-      <label>Hundbur</label><span>✅</span>
-      <label>Kamera</label><span>✅</span>
+      <label>Hundbur</label><span>{{ cage_status }}</span>
     </fieldset>
   </div>
   <div class="div3">
@@ -40,9 +39,9 @@
       <fieldset class="settings">
 
         <legend>Inställningar</legend>
-        <label>Börja filma efter</label><input name="stop_filming_after" type="number" maxlenght="2" value="7" />
+        <label>Börja filma efter</label><input name="start_filming_after" type="number" maxlenght="2" value="7" />
         sekunder
-        <label>Sluta filma efter</label><input name="stat_filming_after" type="number" maxlength="3" value="25" />
+        <label>Sluta filma efter</label><input name="stop_filming_after" type="number" maxlength="3" value="25" />
         sekunder
         <button type="submit">
           Spara inställningar
