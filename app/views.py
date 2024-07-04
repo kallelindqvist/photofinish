@@ -5,20 +5,40 @@ import io
 import time
 import picamera
 import RPi.GPIO as GPIO
-import ffmpeg
+import fnmatch
+import os
+import glob
 
 from app import app
 
 rotation = 180
 start_filming_after = 7
 stop_filming_after = 20
-fps = 200
+fps = 120
+sensor_mode = 6
+resolution= (640, 480)
 
 # GPIO.setmode(GPIO.BOARD)
 # ledPin = 12
 # buttonPin = 16
 # GPIO.setup(ledPin, GPIO.OUT)
 # GPIO.setup(buttonPin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+class SplitFrames(object):
+    def __init__(self):
+        self.frame_num = 0
+        self.output = None
+
+    def write(self, buf):
+        if buf.startswith(b'\xff\xd8'):
+            # Start of new frame; close the old one (if any) and
+            # open a new output
+            if self.output:
+                self.output.close()
+            self.frame_num += 1
+            self.output = io.open('app/static/race/image_%04d.jpg' % self.frame_num, 'wb')
+        self.output.write(buf)
+
 
 def start_film(channel):
     #buttonState = GPIO.input(buttonPin)
@@ -28,56 +48,35 @@ def start_film(channel):
 
     #GPIO.remove_event_detect(channel)
     #GPIO.output(ledPin, GPIO.LOW)
+    
+    for f in glob.glob("app/static/race/image_*.jpg"):
+        os.remove(f)
 
-    video_filename= 'app/static/' + dt.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
-    with picamera.PiCamera(resolution=(640, 480), framerate=fps, sensor_mode=7) as camera:
+    filename = dt.datetime.now().strftime('%Y-%m-%dT%H%M%S')
+    video_filename= 'app/static/' + filename + ".mjpeg"
+    with picamera.PiCamera(resolution=resolution, framerate=fps, sensor_mode=sensor_mode) as camera:
         camera.exposure_mode='off'
         camera.rotation=rotation
         camera.start_preview()
-        start = dt.datetime.now()
         time.sleep(start_filming_after)
-        camera.annotate_frame_num = True
+        output = SplitFrames()
+        start = dt.datetime.now()
         camera.annotate_background = picamera.Color('black')
-        camera.start_recording(PtsOutput(camera, video_filename + ".h264", 'pts.txt'), format='h264')
-        camera.wait_recording(stop_filming_after - start_filming_after)
+        camera.annotate_text = str(dt.datetime.now() - start)
+        camera.start_recording(output, format='mjpeg')
+        while (dt.datetime.now() - start).seconds < (stop_filming_after - start_filming_after):
+            camera.annotate_text = str(dt.datetime.now() - start)
+            camera.wait_recording(0.001)
         camera.stop_recording()
-        pass
-        
-    (
-        ffmpeg
-        .input(video_filename+".h264")
-        .output("app/static/race/"+video_filename+"_%04d.png")
-        .run(overwrite_output=True)
-    )
+        finish = dt.datetime.now()
+        print('Captured %d frames at %.2ffps' % (
+            output.frame_num,
+            output.frame_num / (finish - start).total_seconds()))
+
 
     #GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=start_film, bouncetime=200)
     return video_filename[4:]
 
-
-class PtsOutput(object):
-    def __init__(self, camera, video_filename, pts_filename):
-        self.camera = camera
-        self.video_output = io.open(video_filename, 'wb')
-        self.pts_output = io.open(pts_filename, 'w')
-        self.start_time = None
-
-    def write(self, buf):
-        self.video_output.write(buf)
-        if self.camera.frame.complete and self.camera.frame.timestamp:
-            if self.start_time is None:
-                self.start_time = self.camera.frame.timestamp
-                self.pts_output.write('# timecode format v2\n')
-                print(buf)
-            self.pts_output.write('%f\n' % ((self.camera.frame.timestamp - self.start_time) / 1000000.0))
-
-        
-        def flush(self):    
-            self.video_output.flush()
-            self.pts_output.flush()
-            
-        def close(self):
-            self.video_output.close()
-            self.pts_output.close()    
 
 # GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=start_film, bouncetime=200)
 def cage_status():
@@ -105,8 +104,14 @@ def video():
 
 @app.route("/start")
 def start():
-    return '<html><body><a href="' + start_film(20) + '">Ladda ner video</a></body></html>'
-    #return index()
+    start_film(20)
+    return images()
+
+@app.route("/images")
+def images():
+    print(os.listdir('.'))
+    file_count = len(fnmatch.filter(os.listdir('app/static/race'), 'image*.jpg'))
+    return render_template('images.html', max=file_count)
 
 @app.route('/camera')
 def take_photo():
@@ -116,6 +121,8 @@ def take_photo():
         camera.start_preview()
         # Camera warm-up time
         time.sleep(2)
+        camera.resolution=resolution
+        camera.sensor_mode = sensor_mode
         camera.rotation = rotation
         camera.capture(my_stream, format='jpeg', use_video_port=True)
         pass
