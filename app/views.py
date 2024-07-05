@@ -12,7 +12,7 @@ from picamera2.encoders import MJPEGEncoder
 from picamera2 import MappedArray
 from picamera2.outputs import FileOutput
 
-from app import app, picam2
+from app import app, picam2, models, db
 
 # GPIO.setmode(GPIO.BOARD)
 # ledPin = 12
@@ -86,10 +86,15 @@ def cage_status():
 
 @app.route("/", methods=['GET', 'POST'])
 def index():
+    config = models.Config.query.first()
     if request.method == 'POST':
-        rotation = request.form.get('rotation')
+        config.rotation=request.form.get('rotation')
+        config.start_filming_after=request.form.get('start_filming_after')
+        config.stop_filming_after=request.form.get('stop_filming_after')
+        config.frames_per_second=request.form.get('frames_per_second')
+        db.session.commit()
     #cage_status = cage_status()
-    return render_template('index.html', cage_status=cage_status())
+    return render_template('index.html', cage_status=cage_status(), rotation=config.rotation, start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after, frames_per_second=config.frames_per_second)
 
 
 @app.route("/video")
