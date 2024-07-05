@@ -20,7 +20,6 @@ from app import app, picam2, models, db
 # GPIO.setup(ledPin, GPIO.OUT)
 # GPIO.setup(buttonPin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-startiest_time = dt.datetime.now()
 colour = (255, 255, 255)
 origin = (0, 30)
 font = cv2.FONT_HERSHEY_PLAIN
@@ -43,7 +42,7 @@ class SplitFrames(io.BufferedIOBase):
         self.output.write(buf)
 
 def apply_timestamp(request):
-    timestamp = str(dt.datetime.now() - startiest_time)
+    timestamp = str(dt.datetime.now() - race_start_time)
     with MappedArray(request, "main") as m:
         cv2.putText(m.array, timestamp, origin, font, scale, colour, thickness)
 
@@ -57,15 +56,19 @@ def start_film(channel):
     #GPIO.remove_event_detect(channel)
     #GPIO.output(ledPin, GPIO.LOW)
     
+    global race_start_time
+    race_start_time = dt.datetime.now()
+    config = models.Config.query.first()
     for f in glob.glob("app/static/race/image_*.jpg"):
         os.remove(f)
 
     picam2.pre_callback = apply_timestamp
     encoder = MJPEGEncoder(10000000)
     output = SplitFrames()
-    startiest_time = dt.datetime.now()
+
+    time.sleep(config.start_filming_after)
     picam2.start_recording(encoder, FileOutput(output))
-    time.sleep(5)
+    time.sleep(config.stop_filming_after)
     picam2.stop_recording()
     #GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=start_film, bouncetime=200)
 
