@@ -1,7 +1,6 @@
 <!doctype html>
 <title>Hello from Flask</title>
 
-
 {% extends 'base.html' %}
 
 {% block content %}
@@ -12,11 +11,11 @@
 
     <fieldset>
       <legend>Förhandsgranskning</legend>
-      <img src="{{ url_for('take_photo') }} " width="512" height="512" style="object-fit: scale-down">
-      <button type="button">
-        Uppdatera bild
+      <img id="imagePreview" src="{{ url_for('take_photo') }}" width="512" height="512" style="object-fit: scale-down">
+      <button type="button" onclick="updateImage()">
+      Uppdatera bild
       </button>
-      <a href="#">Ladda ner målfilm</a>
+    </fieldset>
     </fieldset>
   </div>
   <div class="div2">
@@ -52,4 +51,5 @@
     </form>
   </div>
 </div>
+<script src="{{ url_for('static', filename='index.js' ) }}"></script>
 {% endblock %}
