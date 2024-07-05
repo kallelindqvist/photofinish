@@ -96,11 +96,6 @@ def index():
     #cage_status = cage_status()
     return render_template('index.html', cage_status=cage_status(), rotation=config.rotation, start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after, frames_per_second=config.frames_per_second)
 
-
-@app.route("/video")
-def video():
-    return render_template('video.html')
-
 @app.route("/start")
 def start():
     start_film(20)
@@ -119,10 +114,3 @@ def take_photo():
     picam2.capture_file(my_stream, format='jpeg')
     my_stream.seek(0)
     return send_file(my_stream, mimetype='image/jpeg')
-
-@app.route('/camera_settings', methods=['GET', 'POST'])
-def camera_settings():
-    if request.method == 'GET':
-        return rotation
-    if request.method == 'POST':
-        rotation = request.form.get('rotation')
