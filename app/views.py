@@ -60,8 +60,6 @@ def start_film(channel):
     for f in glob.glob("app/static/race/image_*.jpg"):
         os.remove(f)
 
-    filename = dt.datetime.now().strftime('%Y-%m-%dT%H%M%S')
-    video_filename= 'app/static/' + filename + ".mjpeg"
     picam2.pre_callback = apply_timestamp
     encoder = MJPEGEncoder(10000000)
     output = SplitFrames()
@@ -69,7 +67,6 @@ def start_film(channel):
     picam2.start_recording(encoder, FileOutput(output))
     time.sleep(5)
     picam2.stop_recording()
-    return video_filename[4:]
     #GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=start_film, bouncetime=200)
 
 # GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=start_film, bouncetime=200)
@@ -94,7 +91,7 @@ def index():
         config.frames_per_second=request.form.get('frames_per_second')
         db.session.commit()
     #cage_status = cage_status()
-    return render_template('index.html', cage_status=cage_status(), rotation=config.rotation, start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after, frames_per_second=config.frames_per_second)
+    return render_template('index.html', cage_status=cage_status(), start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after)
 
 @app.route("/start")
 def start():
