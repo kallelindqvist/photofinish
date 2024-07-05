@@ -1,5 +1,5 @@
-Flask==2.1.2
-picamera==1.13
+Flask>=3.0
+picamera2>=0.3.16
 Flask-SQLAlchemy==2.5.1
 RPi.GPIO==0.7.1
-ffmpeg-python==0.2.0
+opencv-python>=4.10

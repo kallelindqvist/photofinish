@@ -3,20 +3,16 @@ from flask import render_template, send_file, request
 import datetime as dt
 import io
 import time
-import picamera
 import RPi.GPIO as GPIO
 import fnmatch
 import os
 import glob
+import cv2
+from picamera2.encoders import MJPEGEncoder
+from picamera2 import MappedArray
+from picamera2.outputs import FileOutput
 
-from app import app
-
-rotation = 180
-start_filming_after = 7
-stop_filming_after = 20
-fps = 120
-sensor_mode = 6
-resolution= (640, 480)
+from app import app, picam2
 
 # GPIO.setmode(GPIO.BOARD)
 # ledPin = 12
@@ -24,7 +20,14 @@ resolution= (640, 480)
 # GPIO.setup(ledPin, GPIO.OUT)
 # GPIO.setup(buttonPin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-class SplitFrames(object):
+startiest_time = dt.datetime.now()
+colour = (255, 255, 255)
+origin = (0, 30)
+font = cv2.FONT_HERSHEY_PLAIN
+scale = 2
+thickness = 2 
+
+class SplitFrames(io.BufferedIOBase):
     def __init__(self):
         self.frame_num = 0
         self.output = None
@@ -38,6 +41,11 @@ class SplitFrames(object):
             self.frame_num += 1
             self.output = io.open('app/static/race/image_%04d.jpg' % self.frame_num, 'wb')
         self.output.write(buf)
+
+def apply_timestamp(request):
+    timestamp = str(dt.datetime.now() - startiest_time)
+    with MappedArray(request, "main") as m:
+        cv2.putText(m.array, timestamp, origin, font, scale, colour, thickness)
 
 
 def start_film(channel):
@@ -54,29 +62,15 @@ def start_film(channel):
 
     filename = dt.datetime.now().strftime('%Y-%m-%dT%H%M%S')
     video_filename= 'app/static/' + filename + ".mjpeg"
-    with picamera.PiCamera(resolution=resolution, framerate=fps, sensor_mode=sensor_mode) as camera:
-        camera.exposure_mode='off'
-        camera.rotation=rotation
-        camera.start_preview()
-        time.sleep(start_filming_after)
-        output = SplitFrames()
-        start = dt.datetime.now()
-        camera.annotate_background = picamera.Color('black')
-        camera.annotate_text = str(dt.datetime.now() - start)
-        camera.start_recording(output, format='mjpeg')
-        while (dt.datetime.now() - start).seconds < (stop_filming_after - start_filming_after):
-            camera.annotate_text = str(dt.datetime.now() - start)
-            camera.wait_recording(0.001)
-        camera.stop_recording()
-        finish = dt.datetime.now()
-        print('Captured %d frames at %.2ffps' % (
-            output.frame_num,
-            output.frame_num / (finish - start).total_seconds()))
-
-
-    #GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=start_film, bouncetime=200)
+    picam2.pre_callback = apply_timestamp
+    encoder = MJPEGEncoder(10000000)
+    output = SplitFrames()
+    startiest_time = dt.datetime.now()
+    picam2.start_recording(encoder, FileOutput(output))
+    time.sleep(5)
+    picam2.stop_recording()
     return video_filename[4:]
-
+    #GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=start_film, bouncetime=200)
 
 # GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=start_film, bouncetime=200)
 def cage_status():
@@ -117,15 +111,7 @@ def images():
 def take_photo():
     # Create an in-memory stream
     my_stream = io.BytesIO()
-    with picamera.PiCamera() as camera:
-        camera.start_preview()
-        # Camera warm-up time
-        time.sleep(2)
-        camera.resolution=resolution
-        camera.sensor_mode = sensor_mode
-        camera.rotation = rotation
-        camera.capture(my_stream, format='jpeg', use_video_port=True)
-        pass
+    picam2.capture_file(my_stream, format='jpeg')
     my_stream.seek(0)
     return send_file(my_stream, mimetype='image/jpeg')
 
