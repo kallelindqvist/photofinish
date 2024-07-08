@@ -11,6 +11,7 @@ import cv2
 from picamera2.encoders import MJPEGEncoder
 from picamera2 import MappedArray
 from picamera2.outputs import FileOutput
+import libcamera 
 
 from app import app, picam2, models, db
 
@@ -88,13 +89,24 @@ def cage_status():
 def index():
     config = models.Config.query.first()
     if request.method == 'POST':
-        config.rotation=request.form.get('rotation')
+        if bool(request.form.get('reset_settings')) == True:
+            db.session.delete(config)
+            db.session.commit()
+            db.session.add(models.Config())
+            db.session.commit()
+        config.flip_image = bool(request.form.get('flip_image'))
         config.start_filming_after=request.form.get('start_filming_after')
         config.stop_filming_after=request.form.get('stop_filming_after')
-        config.frames_per_second=request.form.get('frames_per_second')
         db.session.commit()
+        camera_config = picam2.camera_configuration()
+        if camera_config['transform'].hflip != config.flip_image:
+            camera_config['transform'] = libcamera.Transform(hflip=config.flip_image, vflip=config.flip_image)
+            picam2.stop()
+            picam2.configure(camera_config)
+            picam2.start()
+
     #cage_status = cage_status()
-    return render_template('index.html', cage_status=cage_status(), start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after)
+    return render_template('index.html', cage_status=cage_status(), flip_image=config.flip_image, start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after)
 
 @app.route("/start")
 def start():

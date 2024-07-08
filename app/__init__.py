@@ -1,5 +1,6 @@
 import os
 from picamera2 import Picamera2
+import libcamera
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -30,6 +31,7 @@ with app.app_context():
 
 
     video_config = picam2.create_video_configuration(
+        transform=libcamera.Transform(hflip=config.flip_image, vflip=config.flip_image),
         main={"size": resolution},
         sensor={'output_size': resolution, 'bit_depth': 10},
         controls={"FrameDurationLimits": (frame_duration_limit, frame_duration_limit)}

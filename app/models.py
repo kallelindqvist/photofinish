@@ -6,6 +6,7 @@ from app import db
 
 class Config(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
+    flip_image: Mapped[bool] = mapped_column(default=False)
     frames_per_second: Mapped[int] = mapped_column(default=100)
     resolution_width: Mapped[int] = mapped_column(default='640')
     resolution_height: Mapped[int] = mapped_column(default='480')
