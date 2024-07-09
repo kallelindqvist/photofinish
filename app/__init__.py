@@ -33,11 +33,18 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
 db = SQLAlchemy(app)
 
 # Import models 
-from app.models import Config
+from app.models import Config, Race
 
 with app.app_context():
     #Create the database
     db.create_all()
+
+    race = Race.query.filter_by(running=True).first()
+    # Stop any race that is running
+    if race is not None:
+        race.running = False
+        db.session.commit()
+
     if Config.query.first() is None:
         db.session.add(Config())
         db.session.commit()

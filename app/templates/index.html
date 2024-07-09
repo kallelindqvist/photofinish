@@ -7,33 +7,45 @@
 {% set name='baz' %}
 <h1>Målkamera</h1>
 <div class="parent">
-  <div class="div1">
-
+  <div class="divImage">
     <fieldset>
-      <legend>Förhandsgranskning</legend>
-      <img id="imagePreview" src="{{ url_for('take_photo') }}" width="512" height="512" style="object-fit: scale-down">
+      <legend>Race</legend>
+      <select id="race">
+        <option value="latest">Senaste</option>
+        <option value="20240316T123412">2024-03-16T12:34:12</option>
+      </select>
+      <img id="image" src="{{ url_for('static', filename='race/image_0001.jpg') }} ">
+      <input type="range" id="image_index" name="image_index" value="1" min="1" max="{{ max }}">
+      <br>
+
       <button type="button" onclick="updateImage()">
-      Uppdatera bild
+        Uppdatera bild
       </button>
-    </fieldset>
+        
+      </button>
+      <form method="post">
+        <input type="hidden" name=start_race value="1">
+        <button type="submit">
+          Starta race
+        </button>
+      </form>
+      <form method="post">
+        <input type="hidden" name=stop_race value="1">
+        <button type="submit">
+          Avsluta race
+        </button>
+      </form>
     </fieldset>
   </div>
-  <div class="div2">
+  <div class="divStatus">
     <fieldset class="status">
       <legend>Status</legend>
       <label>Hundbur</label><span>{{ cage_status }}</span>
+      <label>Race aktivt</label><span>{{ race_active }}</span>
     </fieldset>
   </div>
-  <div class="div3">
-    <button type="button">
-      Starta race
-    </button>
-    <br />
-    <button type="button">
-      Avsluta race
-    </button>
-  </div>
-  <div class="div4">
+
+  <div class="divSettings">
     <form method="post">
       <fieldset class="settings">
 
@@ -61,4 +73,5 @@
   </div>
 </div>
 <script src="{{ url_for('static', filename='index.js' ) }}"></script>
+<script src="{{ url_for('static', filename='images.js' ) }}"></script>
 {% endblock %}

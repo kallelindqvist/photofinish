@@ -1,4 +1,4 @@
 function updateImage() {
-    var img = document.getElementById('imagePreview');
-    img.src = img.src.split('?')[0] + '?' + new Date().getTime();
+    var img = document.getElementById('image');
+    img.src = '/camera?' + new Date().getTime();
 }
