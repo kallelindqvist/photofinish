@@ -1,9 +1,30 @@
+import atexit
+import signal
+import sys
 import os
 from picamera2 import Picamera2
 import libcamera
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+
+import RPi.GPIO as GPIO
+
+def cleanup_gpio():
+    print("Cleaning up GPIO")
+    GPIO.cleanup()
+
+# Register cleanup function for normal exit
+atexit.register(cleanup_gpio)
+
+# Handler for signal termination (e.g., SIGINT, SIGTERM)
+def signal_handler(sig, frame):
+    cleanup_gpio()
+    sys.exit(0)
+
+# Register signal handler for SIGINT (Ctrl+C) and SIGTERM
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 # create and configure the app
 app = Flask(__name__)
@@ -41,3 +62,4 @@ with app.app_context():
 
 # Import views
 from app import views
+

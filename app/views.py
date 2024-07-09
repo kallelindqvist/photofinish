@@ -15,11 +15,24 @@ import libcamera
 
 from app import app, picam2, models, db
 
-# GPIO.setmode(GPIO.BOARD)
-# ledPin = 12
-# buttonPin = 16
-# GPIO.setup(ledPin, GPIO.OUT)
-# GPIO.setup(buttonPin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setmode(GPIO.BCM)
+ledPin = 18
+buttonPin = 13
+GPIO.setup(ledPin, GPIO.OUT)
+GPIO.setup(buttonPin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+
+def update_cage_status(pin):
+    buttonState = GPIO.input(buttonPin)
+    if buttonState == False:
+        # Cage is open
+        GPIO.output(ledPin, GPIO.HIGH)
+        return
+    #Cage is closed
+    GPIO.output(ledPin, GPIO.LOW) 
+
+
+GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=update_cage_status, bouncetime=200)
 
 colour = (255, 255, 255)
 origin = (0, 30)
@@ -49,14 +62,6 @@ def apply_timestamp(request):
 
 
 def start_film(channel):
-    #buttonState = GPIO.input(buttonPin)
-    #if buttonState == False:
-    #    GPIO.output(ledPin, GPIO.HIGH)
-    #    return
-
-    #GPIO.remove_event_detect(channel)
-    #GPIO.output(ledPin, GPIO.LOW)
-    
     global race_start_time
     race_start_time = dt.datetime.now()
     config = models.Config.query.first()
@@ -71,17 +76,12 @@ def start_film(channel):
     picam2.start_recording(encoder, FileOutput(output))
     time.sleep(config.stop_filming_after)
     picam2.stop_recording()
-    #GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=start_film, bouncetime=200)
 
-# GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=start_film, bouncetime=200)
 def cage_status():
-    #buttonState = GPIO.input(buttonPin)
-    buttonState = False
+    buttonState = GPIO.input(buttonPin)
     if buttonState == False:
-        #GPIO.output(ledPin, GPIO.HIGH)
         return "Stängd"
     else:
-        #GPIO.output(ledPin, GPIO.LOW)
         return "Öppen"
         
 
@@ -105,7 +105,6 @@ def index():
             picam2.configure(camera_config)
             picam2.start()
 
-    #cage_status = cage_status()
     return render_template('index.html', cage_status=cage_status(), flip_image=config.flip_image, start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after)
 
 @app.route("/start")
