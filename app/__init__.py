@@ -1,11 +1,10 @@
 import atexit
-import signal
 import sys
-import os
 from picamera2 import Picamera2
 import libcamera
 
 from flask import Flask
+from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 
 import RPi.GPIO as GPIO
@@ -22,14 +21,12 @@ def signal_handler(sig, frame):
     cleanup_gpio()
     sys.exit(0)
 
-# Register signal handler for SIGINT (Ctrl+C) and SIGTERM
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
 
 # create and configure the app
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
+socketio = SocketIO(app)
 db = SQLAlchemy(app)
 
 # Import models 

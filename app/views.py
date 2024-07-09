@@ -1,5 +1,8 @@
 
 from flask import render_template, send_file, request, url_for
+import flask_socketio
+from sqlalchemy import  desc
+
 import datetime as dt
 import io
 import time
@@ -13,11 +16,13 @@ from picamera2 import MappedArray
 from picamera2.outputs import FileOutput
 import libcamera 
 
-from app import app, picam2, models, db
+from app import app, picam2, models, db, socketio
 
 STATIC_DIRECTORY = 'app/static/'
 RACE_DIRECTORY_BASE = 'race/'
 RACE_DIRECTORY_LATEST = STATIC_DIRECTORY + RACE_DIRECTORY_BASE + 'latest'
+
+ROOM="photofinish"
 
 GPIO.setmode(GPIO.BCM)
 ledPin = 18
@@ -31,15 +36,18 @@ def update_cage_status(pin):
     if buttonState == False:
         # Cage is closed
         GPIO.output(ledPin, GPIO.HIGH)
+        with app.test_request_context('/'):
+            flask_socketio.emit('cage', 'Stängd', namespace='/', room=ROOM)
+    else:    
+        GPIO.output(ledPin, GPIO.LOW)
+        with app.test_request_context('/'):
+            flask_socketio.emit('cage', 'Öppen', namespace='/', room=ROOM)
+        with app.app_context():
+            current_race = models.Race.query.filter_by(running=True).first()
+            config = models.Config.query.first()
+            if current_race is not None:
+                start_film(current_race, config.start_filming_after, config.stop_filming_after)
         
-    #Cage is open
-    GPIO.output(ledPin, GPIO.LOW)
-    with app.app_context():
-        current_race = models.Race.query.filter_by(running=True).first()
-        config = models.Config.query.first()
-        if current_race is not None:
-            start_film(current_race, config.start_filming_after, config.stop_filming_after)
-        return
 
 
 GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=update_cage_status, bouncetime=200)
@@ -84,14 +92,9 @@ def start_film(current_race, start_filming_after, stop_filming_after):
     time.sleep(stop_filming_after)
     picam2.stop_recording() 
 
-    # Wait a while to make sure the recording is stopped
-    time.sleep(2)
-    if current_race is not None:
-        current_race_directory = STATIC_DIRECTORY + RACE_DIRECTORY_BASE + current_race.start_time
-        os.rename(RACE_DIRECTORY_LATEST, current_race_directory)
-        current_race.running = False
-        db.session.commit()
-    
+    current_race.running = False
+    db.session.commit()
+    flask_socketio.emit('race', 'Nej', namespace='/', room=ROOM)
 
 def cage_status():
     buttonState = GPIO.input(buttonPin)
@@ -111,55 +114,68 @@ def index():
             db.session.commit()
             db.session.add(models.Config())
             db.session.commit()
-        elif bool(request.form.get('start_race')) == True:
-            if current_race is not None:
-                print("Race is already running")
-            else:
-                current_race = models.Race()
-                current_race.start_time = dt.datetime.now().replace(microsecond=0).isoformat()
-                current_race.running = True
-                db.session.add(current_race)
-                db.session.commit()
-
-        elif bool(request.form.get('stop_race')) == True:
-            if current_race is None:
-                print("No race is running")
-            else:
-                current_race.running = False
-                db.session.commit()
         else:
             config.flip_image = bool(request.form.get('flip_image'))
             config.start_filming_after=request.form.get('start_filming_after')
             config.stop_filming_after=request.form.get('stop_filming_after')
             db.session.commit()
             camera_config = picam2.camera_configuration()
-            if camera_config['transform'].hflip != config.flip_image:
-                camera_config['transform'] = libcamera.Transform(hflip=config.flip_image, vflip=config.flip_image)
-                picam2.stop()
-                picam2.configure(camera_config)
-                picam2.start()
+        if camera_config['transform'].hflip != config.flip_image:
+            camera_config['transform'] = libcamera.Transform(hflip=config.flip_image, vflip=config.flip_image)
+            picam2.stop()
+            picam2.configure(camera_config)
+            picam2.start()
 
     race_active = "Nej"
-    races = models.Race.query.filter_by(running=False).all()
+    races = models.Race.query.filter_by(running=False).order_by(desc(models.Race.start_time)).all()
+    max=1
     if current_race is not None and current_race.running:
         race_active = "Ja"
         image_src = url_for('static', filename='active_race.png')
     else:
         if races is not None and len(races) > 0:
+            max=image_count(races[0].start_time)
             image_src = url_for('static', filename=RACE_DIRECTORY_BASE + races[0].start_time + '/image_0001.jpg')
         else:
             image_src = url_for("take_photo")
-    return render_template('index.html', cage_status=cage_status(), flip_image=config.flip_image, image_src=image_src, race_active=race_active, races=races, start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after)
+    return render_template('index.html', cage_status=cage_status(), flip_image=config.flip_image, max=max, image_src=image_src, race_active=race_active, races=races, start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after)
 
-@app.route("/start")
-def start():
-    start_film(None, 0, 10)
-    return images()
+@app.route("/start_race", methods=['POST'])
+def start_race():
+    current_race = models.Race.query.filter_by(running=True).first()
+    if current_race is not None:
+        print("Race is already running")
+    else:
+        current_race = models.Race()
+        current_race.start_time = dt.datetime.now().replace(microsecond=0).isoformat()
+        current_race.running = True
+        db.session.add(current_race)
+        db.session.commit()
+        global RACE_DIRECTORY_LATEST
+        RACE_DIRECTORY_LATEST = STATIC_DIRECTORY + RACE_DIRECTORY_BASE + current_race.start_time
+        os.makedirs(RACE_DIRECTORY_LATEST)
+        flask_socketio.emit('race', 'Ja', namespace='/', room=ROOM)
+    return "OK"
 
-@app.route("/images")
-def images():
-    file_count = len(fnmatch.filter(os.listdir('app/static/race'), 'image*.jpg'))
-    return render_template('images.html', max=file_count)
+@app.route("/stop_race", methods=['POST'])
+def stop_race():
+    current_race = models.Race.query.filter_by(running=True).first()
+        
+    if current_race is None:
+        print("No race is running")
+    else:
+        current_race.running = False
+        db.session.commit()
+        flask_socketio.emit('race', 'Nej', namespace='/', room=ROOM)
+    return "OK"
+        
+
+def image_count(race):
+    return len(fnmatch.filter(os.listdir(STATIC_DIRECTORY + RACE_DIRECTORY_BASE + race), 'image*.jpg'))
+
+@app.route("/image_count")
+def get_image_count():
+    return str(image_count(request.args.get('race')))
 
 @app.route('/camera')
 def take_photo():
@@ -168,3 +184,17 @@ def take_photo():
     picam2.capture_file(my_stream, format='jpeg')
     my_stream.seek(0)
     return send_file(my_stream, mimetype='image/jpeg')
+
+@socketio.on('connect')
+def websocket_connect():
+    flask_socketio.join_room(ROOM)
+
+@socketio.on('disconnect')
+def websocket_disconnect():
+    flask_socketio.leave_room(ROOM)
+
+@app.errorhandler(404)
+def not_found(e):
+    if request.path.endswith('.jpg'):
+        return send_file('static/404.png', mimetype='image/png'), 404
+    return 'Not found', 404

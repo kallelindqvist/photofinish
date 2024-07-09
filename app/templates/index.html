@@ -15,36 +15,27 @@
         {% for race in races %}
         <option value="{{ race.start_time }}">{{ race.start_time }}</option>
         {% endfor %}
+        <option value="preview">Förhandsgranska</option>
       </select>
       {% endif %}
       <img id="image" src="{{ image_src }} ">
       <input type="range" id="image_index" name="image_index" value="1" min="1" max="{{ max }}">
       <br>
-
-      <button type="button" onclick="updateImage()">
-        Uppdatera bild
-      </button>
         
       </button>
-      <form method="post">
-        <input type="hidden" name=start_race value="1">
-        <button type="submit">
-          Starta race
-        </button>
-      </form>
-      <form method="post">
-        <input type="hidden" name=stop_race value="1">
-        <button type="submit">
-          Avsluta race
-        </button>
-      </form>
+      <button type="submit" onclick="startRace()">
+        Starta race
+      </button>
+      <button type="submit" onclick="stopRace()">
+        Avsluta race
+      </button>
     </fieldset>
   </div>
   <div class="divStatus">
     <fieldset class="status">
       <legend>Status</legend>
-      <label>Hundbur</label><span>{{ cage_status }}</span>
-      <label>Race aktivt</label><span>{{ race_active }}</span>
+      <label>Hundbur</label><span id="cage_status">{{ cage_status }}</span>
+      <label>Race aktivt</label><span id="race_status">{{ race_active }}</span>
     </fieldset>
   </div>
 
@@ -75,6 +66,7 @@
     </form>
   </div>
 </div>
-<script src="{{ url_for('static', filename='index.js' ) }}"></script>
 <script src="{{ url_for('static', filename='images.js' ) }}"></script>
+<script src="{{ url_for('static', filename='scripts/lib/socket.io.js' ) }}"></script>
+<script src="{{ url_for('static', filename='websocket.js' ) }}"></script>
 {% endblock %}
