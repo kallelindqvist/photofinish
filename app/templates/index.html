@@ -10,11 +10,14 @@
   <div class="divImage">
     <fieldset>
       <legend>Race</legend>
-      <select id="race">
-        <option value="latest">Senaste</option>
-        <option value="20240316T123412">2024-03-16T12:34:12</option>
+      {% if races is defined and races|length >0 %}
+      <select id="race" onchange='raceChanged(this.value)'>
+        {% for race in races %}
+        <option value="{{ race.start_time }}">{{ race.start_time }}</option>
+        {% endfor %}
       </select>
-      <img id="image" src="{{ url_for('static', filename='race/image_0001.jpg') }} ">
+      {% endif %}
+      <img id="image" src="{{ image_src }} ">
       <input type="range" id="image_index" name="image_index" value="1" min="1" max="{{ max }}">
       <br>
 

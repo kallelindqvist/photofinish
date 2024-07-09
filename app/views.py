@@ -1,5 +1,5 @@
 
-from flask import render_template, send_file, request
+from flask import render_template, send_file, request, url_for
 import datetime as dt
 import io
 import time
@@ -14,6 +14,10 @@ from picamera2.outputs import FileOutput
 import libcamera 
 
 from app import app, picam2, models, db
+
+STATIC_DIRECTORY = 'app/static/'
+RACE_DIRECTORY_BASE = 'race/'
+RACE_DIRECTORY_LATEST = STATIC_DIRECTORY + RACE_DIRECTORY_BASE + 'latest'
 
 GPIO.setmode(GPIO.BCM)
 ledPin = 18
@@ -58,7 +62,7 @@ class SplitFrames(io.BufferedIOBase):
             if self.output:
                 self.output.close()
             self.frame_num += 1
-            self.output = io.open('app/static/race/image_%04d.jpg' % self.frame_num, 'wb')
+            self.output = io.open(RACE_DIRECTORY_LATEST + '/image_%04d.jpg' % self.frame_num, 'wb')
         self.output.write(buf)
 
 def apply_timestamp(request):
@@ -70,9 +74,6 @@ def apply_timestamp(request):
 def start_film(current_race, start_filming_after, stop_filming_after):
     global race_start_time
     race_start_time = dt.datetime.now()
-    config = models.Config.query.first()
-    for f in glob.glob("app/static/race/image_*.jpg"):
-        os.remove(f)
 
     picam2.pre_callback = apply_timestamp
     encoder = MJPEGEncoder(10000000)
@@ -83,7 +84,11 @@ def start_film(current_race, start_filming_after, stop_filming_after):
     time.sleep(stop_filming_after)
     picam2.stop_recording() 
 
+    # Wait a while to make sure the recording is stopped
+    time.sleep(2)
     if current_race is not None:
+        current_race_directory = STATIC_DIRECTORY + RACE_DIRECTORY_BASE + current_race.start_time
+        os.rename(RACE_DIRECTORY_LATEST, current_race_directory)
         current_race.running = False
         db.session.commit()
     
@@ -111,7 +116,7 @@ def index():
                 print("Race is already running")
             else:
                 current_race = models.Race()
-                current_race.start_time = dt.datetime.now()
+                current_race.start_time = dt.datetime.now().replace(microsecond=0).isoformat()
                 current_race.running = True
                 db.session.add(current_race)
                 db.session.commit()
@@ -135,9 +140,16 @@ def index():
                 picam2.start()
 
     race_active = "Nej"
+    races = models.Race.query.filter_by(running=False).all()
     if current_race is not None and current_race.running:
         race_active = "Ja"
-    return render_template('index.html', cage_status=cage_status(), flip_image=config.flip_image, race_active=race_active, start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after)
+        image_src = url_for('static', filename='active_race.png')
+    else:
+        if races is not None and len(races) > 0:
+            image_src = url_for('static', filename=RACE_DIRECTORY_BASE + races[0].start_time + '/image_0001.jpg')
+        else:
+            image_src = url_for("take_photo")
+    return render_template('index.html', cage_status=cage_status(), flip_image=config.flip_image, image_src=image_src, race_active=race_active, races=races, start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after)
 
 @app.route("/start")
 def start():
