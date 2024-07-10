@@ -10,14 +10,12 @@
   <div class="divImage">
     <fieldset>
       <legend>Race</legend>
-      {% if races is defined and races|length >0 %}
       <select id="race" onchange='raceChanged(this.value)'>
         {% for race in races %}
         <option value="{{ race.start_time }}">{{ race.start_time }}</option>
         {% endfor %}
         <option value="preview">Förhandsgranska</option>
       </select>
-      {% endif %}
       <img id="image" src="{{ image_src }} ">
       <input type="range" id="image_index" name="image_index" value="1" min="1" max="{{ max }}">
       <br>

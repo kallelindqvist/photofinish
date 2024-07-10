@@ -90,11 +90,11 @@ def start_film(current_race, start_filming_after, stop_filming_after):
     time.sleep(start_filming_after)
     picam2.start_recording(encoder, FileOutput(output))
     time.sleep(stop_filming_after)
-    picam2.stop_recording() 
-
-    current_race.running = False
-    db.session.commit()
-    flask_socketio.emit('race', 'Nej', namespace='/', room=ROOM)
+    if picam2.started:
+        picam2.stop_recording()
+        current_race.running = False
+        db.session.commit()
+        flask_socketio.emit('race', 'Nej', namespace='/', room=ROOM)
 
 def cage_status():
     buttonState = GPIO.input(buttonPin)
@@ -164,6 +164,7 @@ def stop_race():
     if current_race is None:
         print("No race is running")
     else:
+        picam2.stop_recording()
         current_race.running = False
         db.session.commit()
         flask_socketio.emit('race', 'Nej', namespace='/', room=ROOM)
@@ -179,6 +180,9 @@ def get_image_count():
 
 @app.route('/camera')
 def take_photo():
+    current_race = models.Race.query.filter_by(running=True).first()
+    if current_race is not None:
+        return send_file('static/active_race.png', mimetype='image/png')
     # Create an in-memory stream
     my_stream = io.BytesIO()
     picam2.capture_file(my_stream, format='jpeg')

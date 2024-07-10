@@ -1,9 +1,12 @@
 
 let slider = document.getElementById('image_index');
 slider.onchange = changeImage;
+let updateImageId = null;
+let raceSelect = document.getElementById('race');
+raceSelect.selectedIndex = 0;
+raceSelect.dispatchEvent(new Event('change'));
 slider.focus()
 
-let updateImageId = null;
 
 function changeImage(e) {
     e.target.disabled = true
@@ -46,6 +49,7 @@ function raceChanged(race) {
 }
 
 function startRace() {
+    clearInterval(updateImageId);
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/start_race', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -54,7 +58,7 @@ function startRace() {
 
 function stopRace() {
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', '/stop_race, true');
+    xhr.open('POST', '/stop_race', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.send(JSON.stringify({ race: 'stop' }));
 }
