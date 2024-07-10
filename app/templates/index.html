@@ -44,7 +44,7 @@
         sekunder<br>
         <label>Sluta filma efter</label><input name="stop_filming_after" type="number" min="0" max="99" value="{{ stop_filming_after }}" />
         sekunder<br>
-        <button type="submit">
+        <button type="submit" onclick="removeBeforeUnloadEventListener()">
           Spara inställningar
         </button>
         
@@ -54,7 +54,7 @@
       <fieldset class="settings">
         <input type="hidden" name="reset_settings" value="1" />
         <legend>Återställ inställningar</legend>
-        <button type="submit">
+        <button type="submit" onclick="removeBeforeUnloadEventListener()">
           Återställ inställningar
         </button>
       </fieldset>

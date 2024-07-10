@@ -63,6 +63,18 @@ function stopRace() {
     xhr.send(JSON.stringify({ race: 'stop' }));
 }
 
+const beforeUnloadHandler = (event) => {
+  // Recommended
+  event.preventDefault();
+
+  // Included for legacy support, e.g. Chrome/Edge < 119
+  event.returnValue = true;
+};
+
+function removeBeforeUnloadEventListener() {
+    window.removeEventListener('beforeunload', beforeUnloadHandler);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('settings');
     const savedFormData = new FormData(form);
@@ -109,4 +121,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+    window.addEventListener('beforeunload', beforeUnloadHandler);
 });
