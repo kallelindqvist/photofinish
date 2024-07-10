@@ -54,7 +54,6 @@ with app.app_context():
 
     frame_duration_limit = int(1000000 / config.frames_per_second)
 
-
     video_config = picam2.create_video_configuration(
         transform=libcamera.Transform(hflip=config.flip_image, vflip=config.flip_image),
         main={"size": resolution},
@@ -62,7 +61,6 @@ with app.app_context():
         controls={"FrameDurationLimits": (frame_duration_limit, frame_duration_limit)}
     )
     picam2.configure(video_config)
-    picam2.start()
 
 # Import views
 from app import views

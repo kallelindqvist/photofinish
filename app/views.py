@@ -44,11 +44,9 @@ def update_cage_status(pin):
             flask_socketio.emit('cage', 'Öppen', namespace='/', room=ROOM)
         with app.app_context():
             current_race = models.Race.query.filter_by(running=True).first()
-            config = models.Config.query.first()
             if current_race is not None:
+                config = models.Config.query.first()
                 start_film(current_race, config.start_filming_after, config.stop_filming_after)
-        
-
 
 GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=update_cage_status, bouncetime=200)
 
@@ -126,11 +124,11 @@ def index():
             picam2.configure(camera_config)
             picam2.start()
 
-    race_active = "Nej"
+    race_status = "Nej"
     races = models.Race.query.filter_by(running=False).order_by(desc(models.Race.start_time)).all()
     max=1
     if current_race is not None and current_race.running:
-        race_active = "Ja"
+        race_status = "Ja"
         image_src = url_for('static', filename='active_race.png')
     else:
         if races is not None and len(races) > 0:
@@ -138,7 +136,7 @@ def index():
             image_src = url_for('static', filename=RACE_DIRECTORY_BASE + races[0].start_time + '/image_0001.jpg')
         else:
             image_src = url_for("take_photo")
-    return render_template('index.html', cage_status=cage_status(), flip_image=config.flip_image, max=max, image_src=image_src, race_active=race_active, races=races, start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after)
+    return render_template('index.html', cage_status=cage_status(), flip_image=config.flip_image, max=max, image_src=image_src, race_status=race_status, races=races, start_filming_after=config.start_filming_after, stop_filming_after=config.stop_filming_after)
 
 @app.route("/start_race", methods=['POST'])
 def start_race():
