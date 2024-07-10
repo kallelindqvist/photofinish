@@ -61,6 +61,7 @@ with app.app_context():
         controls={"FrameDurationLimits": (frame_duration_limit, frame_duration_limit)}
     )
     picam2.configure(video_config)
+    picam2.start()
 
 # Import views
 from app import views
