@@ -72,7 +72,7 @@ class SplitFrames(io.BufferedIOBase):
         self.output.write(buf)
 
 def apply_timestamp(request):
-    timestamp = str(dt.datetime.now() - race_start_time)
+    timestamp = "{:0>5.2f}".format((dt.datetime.now() - race_start_time).total_seconds())
     with MappedArray(request, "main") as m:
         cv2.putText(m.array, timestamp, origin, font, scale, colour, thickness)
 
