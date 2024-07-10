@@ -7,6 +7,7 @@ class Race(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     start_time: Mapped[str] = mapped_column()
     running: Mapped[bool] = mapped_column(default=False)
+    started: Mapped[bool] = mapped_column(default=False)
 
 class Config(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)

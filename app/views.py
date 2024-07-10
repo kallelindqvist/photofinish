@@ -46,6 +46,9 @@ def update_cage_status(pin):
             current_race = models.Race.query.filter_by(running=True).first()
             if current_race is not None:
                 config = models.Config.query.first()
+                current_race.started = True
+                db.session.commit()
+                socketio.emit('race', 'Pågår', namespace='/', room=ROOM)
                 start_film(current_race, config.start_filming_after, config.stop_filming_after)
 
 GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=update_cage_status, bouncetime=200)
@@ -92,7 +95,7 @@ def start_film(current_race, start_filming_after, stop_filming_after):
         picam2.stop_recording()
         current_race.running = False
         db.session.commit()
-        flask_socketio.emit('race', 'Nej', namespace='/', room=ROOM)
+        flask_socketio.emit('race', 'Inte redo', namespace='/', room=ROOM)
 
 def cage_status():
     buttonState = GPIO.input(buttonPin)
@@ -124,11 +127,14 @@ def index():
             picam2.configure(camera_config)
             picam2.start()
 
-    race_status = "Nej"
-    races = models.Race.query.filter_by(running=False).order_by(desc(models.Race.start_time)).all()
+    race_status = "Inte redo"
+    races = models.Race.query.filter_by(running=False, started=True).order_by(desc(models.Race.start_time)).all()
     max=1
     if current_race is not None and current_race.running:
-        race_status = "Ja"
+        if current_race.started:
+            race_status = "Pågår"
+        else:
+            race_status = "Redo för start"
         image_src = url_for('static', filename='active_race.png')
     else:
         if races is not None and len(races) > 0:
@@ -152,7 +158,10 @@ def start_race():
         global RACE_DIRECTORY_LATEST
         RACE_DIRECTORY_LATEST = STATIC_DIRECTORY + RACE_DIRECTORY_BASE + current_race.start_time
         os.makedirs(RACE_DIRECTORY_LATEST)
-        flask_socketio.emit('race', 'Ja', namespace='/', room=ROOM)
+        race_status = "Redo för start"
+        if current_race.started:
+            race_status = "Pågår"
+        flask_socketio.emit('race', race_status, namespace='/', room=ROOM)
     return "OK"
 
 @app.route("/stop_race", methods=['POST'])
@@ -165,7 +174,7 @@ def stop_race():
         picam2.stop_recording()
         current_race.running = False
         db.session.commit()
-        flask_socketio.emit('race', 'Nej', namespace='/', room=ROOM)
+        flask_socketio.emit('race', 'Inte redo', namespace='/', room=ROOM)
     return "OK"
         
 

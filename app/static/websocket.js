@@ -16,7 +16,7 @@ socket.on('cage', function(data) {
 
 socket.on('race', function(data) {
     document.getElementById('race_status').innerText=data
-    if(data === 'Nej') {
+    if(data === 'Inte redo') {
         window.location = window.location.href
     }
 })
