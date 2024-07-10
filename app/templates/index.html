@@ -43,9 +43,9 @@
 
         <legend>Inställningar</legend>
         <label>Vänd upp och ner på bilden</label><input name="flip_image" type="checkbox" value="true" {{ 'checked' if flip_image }} /><br>
-        <label>Börja filma efter</label><input name="start_filming_after" type="number" maxlenght="2" value="{{ start_filming_after }}" />
+        <label>Börja filma efter</label><input name="start_filming_after" type="number" min="0" max="99" value="{{ start_filming_after }}" />
         sekunder<br>
-        <label>Sluta filma efter</label><input name="stop_filming_after" type="number" maxlength="3" value="{{ stop_filming_after }}" />
+        <label>Sluta filma efter</label><input name="stop_filming_after" type="number" min="0" max="99" value="{{ stop_filming_after }}" />
         sekunder<br>
         <button type="submit">
           Spara inställningar
