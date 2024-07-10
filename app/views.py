@@ -14,7 +14,8 @@ import cv2
 from picamera2.encoders import MJPEGEncoder
 from picamera2 import MappedArray
 from picamera2.outputs import FileOutput
-import libcamera 
+import libcamera
+import shutil
 
 from app import app, picam2, models, db, socketio
 
@@ -110,11 +111,14 @@ def index():
     config = models.Config.query.first()
     current_race = models.Race.query.filter_by(running=True).first()
     if request.method == 'POST':
-        if bool(request.form.get('reset_settings')) == True:
+        if bool(request.form.get('reset_everything')) == True:
             db.session.delete(config)
+            models.Race.query.delete()
             db.session.commit()
             db.session.add(models.Config())
             db.session.commit()
+            shutil.rmtree(STATIC_DIRECTORY + RACE_DIRECTORY_BASE)
+            os.makedirs(STATIC_DIRECTORY + RACE_DIRECTORY_BASE)
         else:
             config.flip_image = bool(request.form.get('flip_image'))
             config.start_filming_after=request.form.get('start_filming_after')

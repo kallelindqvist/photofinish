@@ -50,12 +50,12 @@
         
       </fieldset>
     </form>
-    <form method="post">
+    <form method="post" onsubmit="return confirm('Detta kommer ta bort alla race och återställa all inställningar, vill du fortsätta?');">
       <fieldset class="settings">
-        <input type="hidden" name="reset_settings" value="1" />
-        <legend>Återställ inställningar</legend>
+        <input type="hidden" name="reset_everything" value="1" />
+        <legend>Återställ allting</legend>
         <button type="submit" onclick="removeBeforeUnloadEventListener()">
-          Återställ inställningar
+          Återställ allting
         </button>
       </fieldset>
     </form>
