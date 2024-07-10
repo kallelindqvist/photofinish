@@ -62,3 +62,17 @@ function stopRace() {
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.send(JSON.stringify({ race: 'stop' }));
 }
+
+document.addEventListener('keydown', function(e) {
+    if (slider !== document.activeElement) {
+        if (e.key === 'ArrowLeft') {
+            slider.value--;
+            slider.dispatchEvent(new Event('change'));
+            e.preventDefault();
+        } else if (e.key === 'ArrowRight') {
+            slider.value++;
+            slider.dispatchEvent(new Event('change'));
+            e.preventDefault();
+        }
+    }
+});
