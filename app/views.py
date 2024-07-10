@@ -18,50 +18,33 @@ import libcamera
 import shutil
 
 from app import app, picam2, models, db, socketio
-
-STATIC_DIRECTORY = 'app/static/'
-RACE_DIRECTORY_BASE = 'race/'
-RACE_DIRECTORY_LATEST = STATIC_DIRECTORY + RACE_DIRECTORY_BASE + 'latest'
-
-ROOM="photofinish"
-
-GPIO.setmode(GPIO.BCM)
-ledPin = 18
-buttonPin = 13
-GPIO.setup(ledPin, GPIO.OUT)
-GPIO.setup(buttonPin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
+from app.constants import *
 
 def update_cage_status(pin):
-    buttonState = GPIO.input(buttonPin)
+    buttonState = GPIO.input(BUTTON_PIN)
     if buttonState == False:
         # Cage is closed
-        GPIO.output(ledPin, GPIO.HIGH)
+        GPIO.output(LED_PIN, GPIO.HIGH)
         with app.test_request_context('/'):
-            flask_socketio.emit('cage', 'Stängd', namespace='/', room=ROOM)
+            flask_socketio.emit('cage', 'Stängd', namespace='/', room=WEBSOCKET_ROOM)
     else:    
-        GPIO.output(ledPin, GPIO.LOW)
+        GPIO.output(LED_PIN, GPIO.LOW)
         with app.test_request_context('/'):
-            flask_socketio.emit('cage', 'Öppen', namespace='/', room=ROOM)
+            flask_socketio.emit('cage', 'Öppen', namespace='/', room=WEBSOCKET_ROOM)
         with app.app_context():
             current_race = models.Race.query.filter_by(running=True).first()
             if current_race is not None:
                 config = models.Config.query.first()
                 current_race.started = True
                 db.session.commit()
-                socketio.emit('race', 'Pågår', namespace='/', room=ROOM)
+                socketio.emit('race', 'Pågår', namespace='/', room=WEBSOCKET_ROOM)
                 start_film(current_race, config.start_filming_after, config.stop_filming_after)
 
-GPIO.add_event_detect(buttonPin, GPIO.BOTH, callback=update_cage_status, bouncetime=200)
-
-colour = (255, 255, 255)
-origin = (0, 30)
-font = cv2.FONT_HERSHEY_PLAIN
-scale = 2
-thickness = 2 
+GPIO.add_event_detect(BUTTON_PIN, GPIO.BOTH, callback=update_cage_status, bouncetime=200)
 
 class SplitFrames(io.BufferedIOBase):
-    def __init__(self):
+    def __init__(self, directory=None):
+        self.directory = directory
         self.frame_num = 0
         self.output = None
 
@@ -72,22 +55,23 @@ class SplitFrames(io.BufferedIOBase):
             if self.output:
                 self.output.close()
             self.frame_num += 1
-            self.output = io.open(RACE_DIRECTORY_LATEST + '/image_%04d.jpg' % self.frame_num, 'wb')
+            self.output = io.open(self.directory + '/image_%04d.jpg' % self.frame_num, 'wb')
         self.output.write(buf)
 
-def apply_timestamp(request):
+def apply_timestamp(request, race_start_time):
     timestamp = "{:0>5.2f}".format((dt.datetime.now() - race_start_time).total_seconds())
     with MappedArray(request, "main") as m:
-        cv2.putText(m.array, timestamp, origin, font, scale, colour, thickness)
+        cv2.putText(m.array, timestamp, TIMESTAMP_ORIGIN, TIMESTAMP_FONT, TIMESTAMP_SCALE, TIMESTAMP_COLOUR, TIMESTAMP_THICKNESS)
 
 
 def start_film(current_race, start_filming_after, stop_filming_after):
-    global race_start_time
     race_start_time = dt.datetime.now()
 
-    picam2.pre_callback = apply_timestamp
+    picam2.pre_callback = lambda frame: apply_timestamp(frame, race_start_time)
     encoder = MJPEGEncoder(10000000)
-    output = SplitFrames()
+    raceDirectory = STATIC_DIRECTORY + RACE_DIRECTORY_BASE + current_race.start_time
+    os.makedirs(raceDirectory)
+    output = SplitFrames(directory=raceDirectory)
 
     time.sleep(start_filming_after)
     picam2.start_recording(encoder, FileOutput(output))
@@ -96,10 +80,10 @@ def start_film(current_race, start_filming_after, stop_filming_after):
         picam2.stop_recording()
         current_race.running = False
         db.session.commit()
-        flask_socketio.emit('race', 'Inte redo', namespace='/', room=ROOM)
+        flask_socketio.emit('race', 'Inte redo', namespace='/', room=WEBSOCKET_ROOM)
 
 def cage_status():
-    buttonState = GPIO.input(buttonPin)
+    buttonState = GPIO.input(BUTTON_PIN)
     if buttonState == False:
         return "Stängd"
     else:
@@ -159,13 +143,10 @@ def start_race():
         current_race.running = True
         db.session.add(current_race)
         db.session.commit()
-        global RACE_DIRECTORY_LATEST
-        RACE_DIRECTORY_LATEST = STATIC_DIRECTORY + RACE_DIRECTORY_BASE + current_race.start_time
-        os.makedirs(RACE_DIRECTORY_LATEST)
         race_status = "Redo för start"
         if current_race.started:
             race_status = "Pågår"
-        flask_socketio.emit('race', race_status, namespace='/', room=ROOM)
+        flask_socketio.emit('race', race_status, namespace='/', room=WEBSOCKET_ROOM)
     return "OK"
 
 @app.route("/stop_race", methods=['POST'])
@@ -178,7 +159,7 @@ def stop_race():
         picam2.stop_recording()
         current_race.running = False
         db.session.commit()
-        flask_socketio.emit('race', 'Inte redo', namespace='/', room=ROOM)
+        flask_socketio.emit('race', 'Inte redo', namespace='/', room=WEBSOCKET_ROOM)
     return "OK"
         
 
@@ -203,11 +184,11 @@ def take_photo():
 
 @socketio.on('connect')
 def websocket_connect():
-    flask_socketio.join_room(ROOM)
+    flask_socketio.join_room(WEBSOCKET_ROOM)
 
 @socketio.on('disconnect')
 def websocket_disconnect():
-    flask_socketio.leave_room(ROOM)
+    flask_socketio.leave_room(WEBSOCKET_ROOM)
 
 @app.errorhandler(404)
 def not_found(e):

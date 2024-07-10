@@ -9,6 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 import RPi.GPIO as GPIO
 
+from app.constants import *
+
 def cleanup_gpio():
     print("Cleaning up GPIO")
     GPIO.cleanup()
@@ -20,7 +22,6 @@ atexit.register(cleanup_gpio)
 def signal_handler(sig, frame):
     cleanup_gpio()
     sys.exit(0)
-
 
 # create and configure the app
 app = Flask(__name__)
@@ -63,6 +64,10 @@ with app.app_context():
     picam2.configure(video_config)
     picam2.start()
 
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(LED_PIN, GPIO.OUT)
+GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
 # Import views
 from app import views
-
