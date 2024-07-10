@@ -1,4 +1,4 @@
-const updateImageId = null;
+let updateImageId = null;
 
 const slider = document.getElementById('image_index');
 slider.onchange = changeImage;
@@ -95,9 +95,6 @@ document.addEventListener('DOMContentLoaded', function () {
         form.querySelectorAll('.changed').forEach(input => input.classList.remove('changed'));
         form.classList.remove('unsaved-changes');
     });
-
-
-
 
     document.addEventListener('keydown', function (e) {
         if (slider !== document.activeElement) {

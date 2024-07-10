@@ -120,7 +120,7 @@ def index():
             config.start_filming_after=request.form.get('start_filming_after')
             config.stop_filming_after=request.form.get('stop_filming_after')
             db.session.commit()
-            camera_config = picam2.camera_configuration()
+        camera_config = picam2.camera_configuration()
         if camera_config['transform'].hflip != config.flip_image:
             camera_config['transform'] = libcamera.Transform(hflip=config.flip_image, vflip=config.flip_image)
             picam2.stop()
@@ -190,6 +190,7 @@ def take_photo():
     current_race = models.Race.query.filter_by(running=True).first()
     if current_race is not None:
         return send_file('static/active_race.png', mimetype='image/png')
+    picam2.start()
     # Create an in-memory stream
     my_stream = io.BytesIO()
     picam2.capture_file(my_stream, format='jpeg')
