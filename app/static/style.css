@@ -6,25 +6,45 @@
     grid-row-gap: 3em;
 }
 
-.divImage { grid-area: 1 / 1 / 3 / 2 }
-.divStatus { grid-area: 1 / 2 / 2 / 3; }
-.divSettings { grid-area: 2 / 2 / 3 / 3; }
+.divImage {
+    grid-area: 1 / 1 / 3 / 2;
+}
+
+.divStatus {
+    grid-area: 1 / 2 / 2 / 3;
+}
+
+.divSettings {
+    grid-area: 2 / 2 / 3 / 3;
+}
 
 fieldset.status {
-    display:grid;
+    display: grid;
     grid-template-columns: max-content max-content;
-    grid-gap:3px;
+    grid-gap: 3px;
 }
-fieldset.status label       { text-align:right; }
-fieldset.status label:after { content: ":"; }
+
+fieldset.status label {
+    text-align: right;
+}
+
+fieldset.status label:after {
+    content: ":";
+}
 
 fieldset.settings {
-    display:grid;
+    display: grid;
     grid-template-columns: max-content max-content max-content;
-    grid-gap:3px;
+    grid-gap: 3px;
 }
-fieldset.settings label       { text-align:right; }
-fieldset.settings label:after { content: ":"; }
+
+fieldset.settings label {
+    text-align: right;
+}
+
+fieldset.settings label:after {
+    content: ":";
+}
 
 input[type="number"] {
     width: 3em;
