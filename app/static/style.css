@@ -29,3 +29,11 @@ fieldset.settings label:after { content: ":"; }
 input[type="number"] {
     width: 3em;
 }
+
+.changed {
+    border-color: #ff4500;
+}
+
+form.unsaved-changes {
+    border: 2px solid #ff4500;
+}

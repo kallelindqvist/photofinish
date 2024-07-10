@@ -1,3 +1,35 @@
+const form = document.getElementById('settings');
+const savedFormData = new FormData(form);
+form.addEventListener('change', function(event) {
+    let targetValue;
+    let savedValue;
+    if(event.target.type === 'checkbox') {
+        targetValue = event.target.checked;
+        savedValue = savedFormData.get(event.target.name) === true ? true : false;
+    } else {
+       targetValue = event.target.value;
+       savedValues = savedFormData.get(event.target.name);
+    }
+    
+    if(savedValue !== targetValue) {
+        event.target.classList.add('changed');
+    } else {
+        event.target.classList.remove('changed');
+    }
+    document.getElementsByClassName('changed')
+    if(document.getElementsByClassName('changed').length > 0) {
+        form.classList.add('unsaved-changes');
+    } else {
+        form.classList.remove('unsaved-changes');
+    }
+});
+
+form.addEventListener('submit', function() {
+    // Optional: Remove indicators after submission
+    form.querySelectorAll('.changed').forEach(input => input.classList.remove('changed'));
+    form.classList.remove('unsaved-changes');
+});
+
 
 let slider = document.getElementById('image_index');
 slider.onchange = changeImage;
