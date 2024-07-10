@@ -87,7 +87,7 @@ def start_film(current_race, start_filming_after, stop_filming_after):
 
     time.sleep(start_filming_after)
     picam2.start_recording(encoder, FileOutput(output))
-    time.sleep(stop_filming_after)
+    time.sleep(stop_filming_after - start_filming_after)
     if picam2.started:
         picam2.stop_recording()
         current_race.running = False
