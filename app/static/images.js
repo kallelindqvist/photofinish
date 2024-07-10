@@ -1,44 +1,12 @@
-const form = document.getElementById('settings');
-const savedFormData = new FormData(form);
-form.addEventListener('change', function(event) {
-    let targetValue;
-    let savedValue;
-    if(event.target.type === 'checkbox') {
-        targetValue = event.target.checked;
-        savedValue = savedFormData.get(event.target.name) === true ? true : false;
-    } else {
-       targetValue = event.target.value;
-       savedValues = savedFormData.get(event.target.name);
-    }
-    
-    if(savedValue !== targetValue) {
-        event.target.classList.add('changed');
-    } else {
-        event.target.classList.remove('changed');
-    }
-    document.getElementsByClassName('changed')
-    if(document.getElementsByClassName('changed').length > 0) {
-        form.classList.add('unsaved-changes');
-    } else {
-        form.classList.remove('unsaved-changes');
-    }
-});
+const updateImageId = null;
 
-form.addEventListener('submit', function() {
-    // Optional: Remove indicators after submission
-    form.querySelectorAll('.changed').forEach(input => input.classList.remove('changed'));
-    form.classList.remove('unsaved-changes');
-});
-
-
-let slider = document.getElementById('image_index');
+const slider = document.getElementById('image_index');
 slider.onchange = changeImage;
-let updateImageId = null;
-let raceSelect = document.getElementById('race');
-raceSelect.selectedIndex = 0;
-raceSelect.dispatchEvent(new Event('change'));
 slider.focus()
 
+const raceSelect = document.getElementById('race');
+raceSelect.selectedIndex = 0;
+raceSelect.dispatchEvent(new Event('change'));
 
 function changeImage(e) {
     e.target.disabled = true
@@ -53,16 +21,16 @@ function updateImage() {
 }
 
 function raceChanged(race) {
-    if(updateImageId != null) {
+    if (updateImageId != null) {
         clearInterval(updateImageId);
     }
-    if(race === 'preview') {
+    if (race === 'preview') {
         updateImageId = setInterval(updateImage, 500);
     }
     else {
         var xhr = new XMLHttpRequest();
-        xhr.open('GET', '/image_count?race='+race, true);
-        xhr.onreadystatechange = function() {
+        xhr.open('GET', '/image_count?race=' + race, true);
+        xhr.onreadystatechange = function () {
             if (xhr.status === 200) {
                 // Handle successful response
                 var count = parseInt(xhr.responseText);
@@ -95,16 +63,53 @@ function stopRace() {
     xhr.send(JSON.stringify({ race: 'stop' }));
 }
 
-document.addEventListener('keydown', function(e) {
-    if (slider !== document.activeElement) {
-        if (e.key === 'ArrowLeft') {
-            slider.value--;
-            slider.dispatchEvent(new Event('change'));
-            e.preventDefault();
-        } else if (e.key === 'ArrowRight') {
-            slider.value++;
-            slider.dispatchEvent(new Event('change'));
-            e.preventDefault();
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('settings');
+    const savedFormData = new FormData(form);
+    form.addEventListener('change', function (event) {
+        let targetValue;
+        let savedValue;
+        if (event.target.type === 'checkbox') {
+            targetValue = event.target.checked;
+            savedValue = savedFormData.get(event.target.name) === true ? true : false;
+        } else {
+            targetValue = event.target.value;
+            savedValues = savedFormData.get(event.target.name);
         }
-    }
+
+        if (savedValue !== targetValue) {
+            event.target.classList.add('changed');
+        } else {
+            event.target.classList.remove('changed');
+        }
+        document.getElementsByClassName('changed')
+        if (document.getElementsByClassName('changed').length > 0) {
+            form.classList.add('unsaved-changes');
+        } else {
+            form.classList.remove('unsaved-changes');
+        }
+    });
+
+    form.addEventListener('submit', function () {
+        // Optional: Remove indicators after submission
+        form.querySelectorAll('.changed').forEach(input => input.classList.remove('changed'));
+        form.classList.remove('unsaved-changes');
+    });
+
+
+
+
+    document.addEventListener('keydown', function (e) {
+        if (slider !== document.activeElement) {
+            if (e.key === 'ArrowLeft') {
+                slider.value--;
+                slider.dispatchEvent(new Event('change'));
+                e.preventDefault();
+            } else if (e.key === 'ArrowRight') {
+                slider.value++;
+                slider.dispatchEvent(new Event('change'));
+                e.preventDefault();
+            }
+        }
+    });
 });
