@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function () {
             savedValue = savedFormData.get(event.target.name) === true ? true : false;
         } else {
             targetValue = event.target.value;
-            savedValues = savedFormData.get(event.target.name);
+            savedValue = savedFormData.get(event.target.name);
         }
 
         if (savedValue !== targetValue) {
