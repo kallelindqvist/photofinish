@@ -1,24 +1,24 @@
 
-from flask import render_template, send_file, request, url_for
-import flask_socketio
-from sqlalchemy import  desc
-
 import datetime as dt
-import io
-import time
-import RPi.GPIO as GPIO
 import fnmatch
+import io
 import os
-import glob
-import cv2
-from picamera2.encoders import MJPEGEncoder
-from picamera2 import MappedArray
-from picamera2.outputs import FileOutput
-import libcamera
 import shutil
+import time
 
-from app import app, picam2, models, db, socketio
+import cv2
+import flask_socketio
+import libcamera
+import RPi.GPIO as GPIO
+from flask import render_template, request, send_file, url_for
+from picamera2 import MappedArray
+from picamera2.encoders import MJPEGEncoder
+from picamera2.outputs import FileOutput
+from sqlalchemy import desc
+
+from app import app, db, models, picam2, socketio
 from app.constants import *
+
 
 def update_cage_status(pin):
     buttonState = GPIO.input(BUTTON_PIN)

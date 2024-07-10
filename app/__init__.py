@@ -1,15 +1,15 @@
 import atexit
 import sys
-from picamera2 import Picamera2
-import libcamera
 
+import libcamera
+import RPi.GPIO as GPIO
 from flask import Flask
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
-
-import RPi.GPIO as GPIO
+from picamera2 import Picamera2
 
 from app.constants import *
+
 
 def cleanup_gpio():
     print("Cleaning up GPIO")

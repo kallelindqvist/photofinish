@@ -3,6 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app import db
 
+
 class Race(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     start_time: Mapped[str] = mapped_column()
