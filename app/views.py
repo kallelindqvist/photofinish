@@ -117,10 +117,7 @@ def start_film(current_race, start_filming_after, stop_filming_after):
     picam2.start_recording(encoder, FileOutput(output))
     time.sleep(stop_filming_after - start_filming_after)
     if picam2.started:
-        picam2.stop_recording()
-        current_race.running = False
-        db.session.commit()
-        flask_socketio.emit("race", "Inte redo", namespace="/", room=WEBSOCKET_ROOM)
+        stop_race_actions(current_race)
 
 
 def cage_status():
@@ -232,11 +229,22 @@ def stop_race():
     if current_race is None:
         print("No race is running")
     else:
-        picam2.stop_recording()
-        current_race.running = False
-        db.session.commit()
-        flask_socketio.emit("race", "Inte redo", namespace="/", room=WEBSOCKET_ROOM)
+        stop_race_actions(current_race)
     return "OK"
+
+def stop_race_actions(current_race):
+    """
+    Stops recording, update the race in database, informs liteners and remove the timestamp callback.
+
+    Args:
+        current_race: The current race object.
+    """
+    picam2.stop_recording()
+    current_race.running = False
+    db.session.commit()
+    flask_socketio.emit("race", "Inte redo", namespace="/", room=WEBSOCKET_ROOM)
+    picam2.pre_callback = None
+
 
 
 def image_count(race):
