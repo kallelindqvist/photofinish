@@ -26,7 +26,7 @@ from app.constants import (BUTTON_PIN, LED_PIN, RACE_DIRECTORY_BASE,
                            TIMESTAMP_THICKNESS, WEBSOCKET_ROOM)
 
 
-def update_cage_status():
+def update_cage_status(_):
     """
     Update the status of the cage based on the button state.
     If the button is pressed, the cage is considered closed.
@@ -52,7 +52,6 @@ def update_cage_status():
                 start_film(
                     current_race, config.start_filming_after, config.stop_filming_after
                 )
-
 
 GPIO.add_event_detect(
     BUTTON_PIN, GPIO.BOTH, callback=update_cage_status, bouncetime=200
@@ -273,6 +272,14 @@ def take_photo():
     picam2.capture_file(my_stream, format="jpeg")
     my_stream.seek(0)
     return send_file(my_stream, mimetype="image/jpeg")
+
+@app.route("/reload")
+def reload():
+    """
+    Reload gunicorn.
+    """
+    os.system("pkill -HUP gunicorn")
+    return "OK"
 
 
 @socketio.on("connect")
