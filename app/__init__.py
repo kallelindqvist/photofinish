@@ -12,14 +12,14 @@ from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 from picamera2 import Picamera2
 
-from app.constants import BUTTON_PIN, LED_PIN
+from app.constants import BUTTON_PIN
 
 def cleanup_gpio():
     """
     Cleans up the GPIO pins when the application exits.
     """
     print("Cleaning up GPIO")
-    GPIO.cleanup()
+    GPIO.cleanup(BUTTON_PIN)
 
 
 # Register cleanup function for normal exit
@@ -68,7 +68,6 @@ with app.app_context():
 
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(LED_PIN, GPIO.OUT)
 GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 

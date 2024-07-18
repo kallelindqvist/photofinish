@@ -4,8 +4,7 @@ This file contains constants used throughout the application.
 
 import cv2
 
-LED_PIN = 18
-BUTTON_PIN = 13
+BUTTON_PIN = 26
 
 STATIC_DIRECTORY = "app/static/"
 RACE_DIRECTORY_BASE = "race/"

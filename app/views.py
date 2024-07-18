@@ -20,7 +20,7 @@ from picamera2.outputs import FileOutput
 from sqlalchemy import desc
 
 from app import app, db, models, picam2, socketio
-from app.constants import (BUTTON_PIN, LED_PIN, RACE_DIRECTORY_BASE,
+from app.constants import (BUTTON_PIN, RACE_DIRECTORY_BASE,
                            STATIC_DIRECTORY, TIMESTAMP_COLOUR, TIMESTAMP_FONT,
                            TIMESTAMP_ORIGIN, TIMESTAMP_SCALE,
                            TIMESTAMP_THICKNESS, WEBSOCKET_ROOM)
@@ -35,11 +35,9 @@ def update_cage_status(_):
     button_state = GPIO.input(BUTTON_PIN)
     if not button_state:
         # Cage is closed
-        GPIO.output(LED_PIN, GPIO.HIGH)
         with app.test_request_context("/"):
             flask_socketio.emit("cage", "Stängd", namespace="/", room=WEBSOCKET_ROOM)
     else:
-        GPIO.output(LED_PIN, GPIO.LOW)
         with app.test_request_context("/"):
             flask_socketio.emit("cage", "Öppen", namespace="/", room=WEBSOCKET_ROOM)
         with app.app_context():
