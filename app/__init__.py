@@ -6,7 +6,7 @@ and sets up the necessary configurations and dependencies.
 import atexit
 
 import libcamera
-import RPi.GPIO as GPIO
+import pigpio
 from flask import Flask
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
@@ -14,12 +14,15 @@ from picamera2 import Picamera2
 
 from app.constants import BUTTON_PIN
 
+pi = None
+
 def cleanup_gpio():
     """
     Cleans up the GPIO pins when the application exits.
     """
     print("Cleaning up GPIO")
-    GPIO.cleanup(BUTTON_PIN)
+    if(pi):
+        pi.stop()
 
 
 # Register cleanup function for normal exit
@@ -66,10 +69,9 @@ with app.app_context():
     picam2.configure(video_config)
     picam2.start()
 
-
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
+pi = pigpio.pi()
+pi.set_mode(BUTTON_PIN, pigpio.INPUT)
+pi.set_pull_up_down(BUTTON_PIN, pigpio.PUD_UP)
 
 # Import views
 from app import views

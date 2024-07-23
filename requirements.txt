@@ -1,7 +1,7 @@
 Flask>=3.0
 picamera2>=0.3.16
 Flask-SQLAlchemy>=3.1
-rpi-lgpio==0.6
 opencv-python>=4.10
 Flask-SocketIO>=5.3.6
 gunicorn>=22.0.0
+pigpio==1.78

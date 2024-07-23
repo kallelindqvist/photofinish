@@ -12,28 +12,29 @@ import time
 import cv2
 import flask_socketio
 import libcamera
-import RPi.GPIO as GPIO
+import pigpio
 from flask import render_template, request, send_file, url_for
 from picamera2 import MappedArray
 from picamera2.encoders import MJPEGEncoder
 from picamera2.outputs import FileOutput
 from sqlalchemy import desc
 
-from app import app, db, models, picam2, socketio
+from app import app, db, models, picam2, socketio, pi
 from app.constants import (BUTTON_PIN, RACE_DIRECTORY_BASE,
                            STATIC_DIRECTORY, TIMESTAMP_COLOUR, TIMESTAMP_FONT,
                            TIMESTAMP_ORIGIN, TIMESTAMP_SCALE,
                            TIMESTAMP_THICKNESS, WEBSOCKET_ROOM)
 
 
-def update_cage_status(_):
+def update_cage_status(_, level, tick):
     """
     Update the status of the cage based on the button state.
     If the button is pressed, the cage is considered closed.
     If the button is not pressed, the cage is considered open.
     """
-    race_start_time = dt.datetime.now()
-    button_state = GPIO.input(BUTTON_PIN)
+    current_tick = pi.get_current_tick()
+    race_start_time = dt.datetime.now() - dt.timedelta(microseconds=pigpio.tickDiff(tick, current_tick))
+    button_state = level
     if not button_state:
         # Cage is closed
         with app.test_request_context("/"):
@@ -52,10 +53,7 @@ def update_cage_status(_):
                     current_race, race_start_time, config.start_filming_after, config.stop_filming_after
                 )
 
-GPIO.add_event_detect(
-    BUTTON_PIN, GPIO.BOTH, callback=update_cage_status, bouncetime=200
-)
-
+pi.callback(BUTTON_PIN, pigpio.EITHER_EDGE, update_cage_status)
 
 class SplitFrames(io.BufferedIOBase):
     """
@@ -123,7 +121,7 @@ def cage_status():
     If the button is pressed, the cage is considered closed.
     If the button is not pressed, the cage is considered open.
     """
-    button_state = GPIO.input(BUTTON_PIN)
+    button_state = pi.read(BUTTON_PIN)
     if not button_state:
         return "Stängd"
     else:
