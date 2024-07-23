@@ -32,6 +32,7 @@ def update_cage_status(_):
     If the button is pressed, the cage is considered closed.
     If the button is not pressed, the cage is considered open.
     """
+    race_start_time = dt.datetime.now()
     button_state = GPIO.input(BUTTON_PIN)
     if not button_state:
         # Cage is closed
@@ -48,7 +49,7 @@ def update_cage_status(_):
                 db.session.commit()
                 socketio.emit("race", "Pågår", namespace="/", room=WEBSOCKET_ROOM)
                 start_film(
-                    current_race, config.start_filming_after, config.stop_filming_after
+                    current_race, race_start_time, config.start_filming_after, config.stop_filming_after
                 )
 
 GPIO.add_event_detect(
@@ -97,14 +98,12 @@ def apply_timestamp(frame, race_start_time):
         )
 
 
-def start_film(current_race, start_filming_after, stop_filming_after):
+def start_film(current_race, race_start_time, start_filming_after, stop_filming_after):
     """
     Start recording the race and apply timestamps to the frames.
     The recording starts after the specified start_filming_after time
     and stops after the specified stop_filming_after time.
     """
-    race_start_time = dt.datetime.now()
-
     picam2.pre_callback = lambda frame: apply_timestamp(frame, race_start_time)
     encoder = MJPEGEncoder(10000000)
     race_directory = STATIC_DIRECTORY + RACE_DIRECTORY_BASE + current_race.start_time
