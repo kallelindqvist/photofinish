@@ -13,10 +13,13 @@
         {% endfor %}
         <option value="preview">Förhandsgranska</option>
       </select>
-      <img id="image" src="{{ image_src }} ">
+      <div class="insideWrapper">
+        <img id="image" src="{{ image_src }} " class="coveredImage">
+        <canvas id="canvas" class="coveringCanvas" width="640" height="480"></canvas>
+      </div>
       <input type="range" id="image_index" name="image_index" value="1" min="1" max="{{ max }}">
       <br>
-        
+
       </button>
       <button type="submit" onclick="startRace()">
         Redo för race
@@ -37,20 +40,28 @@
   <div class="divSettings">
     <form id="settings" method="post">
       <fieldset class="settings">
-
         <legend>Inställningar</legend>
-        <label>Vänd upp och ner på bilden</label><input name="flip_image" type="checkbox" value="true" {{ 'checked' if flip_image }} /><br>
-        <label>Börja filma efter</label><input name="start_filming_after" type="number" min="0" max="99" value="{{ start_filming_after }}" />
+        <label>Vänd upp och ner på bilden</label><input name="flip_image" type="checkbox" value="true" {{ 'checked' if
+          flip_image }} /><br>
+        <label>Börja filma efter</label><input name="start_filming_after" type="number" min="0" max="99"
+          value="{{ start_filming_after }}" />
         sekunder<br>
-        <label>Sluta filma efter</label><input name="stop_filming_after" type="number" min="0" max="99" value="{{ stop_filming_after }}" />
+        <label>Sluta filma efter</label><input name="stop_filming_after" type="number" min="0" max="99"
+          value="{{ stop_filming_after }}" />
         sekunder<br>
         <button type="submit" onclick="removeBeforeUnloadEventListener()">
           Spara inställningar
         </button>
-        
+
       </fieldset>
     </form>
-    <form method="post" onsubmit="return confirm('Detta kommer ta bort alla race och återställa all inställningar, vill du fortsätta?');">
+    <fieldset class="goal_line">
+      <legend>Mållinje</legend>
+      <button onclick="goalLinePaintingActive=true">Rita Mållinje</button>
+      <button onclick="clearCanvas()">Rensa Mållinje</button>
+    </fieldset>
+    <form method="post"
+      onsubmit="return confirm('Detta kommer ta bort alla race och återställa all inställningar, vill du fortsätta?');">
       <fieldset class="settings">
         <input type="hidden" name="reset_everything" value="1" />
         <legend>Återställ allting</legend>

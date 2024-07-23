@@ -64,17 +64,18 @@ function stopRace() {
 }
 
 const beforeUnloadHandler = (event) => {
-  // Recommended
-  event.preventDefault();
+    // Recommended
+    event.preventDefault();
 
-  // Included for legacy support, e.g. Chrome/Edge < 119
-  event.returnValue = true;
+    // Included for legacy support, e.g. Chrome/Edge < 119
+    event.returnValue = true;
 };
 
 function removeBeforeUnloadEventListener() {
     window.removeEventListener('beforeunload', beforeUnloadHandler);
 }
 
+const LINE_KEY = 'lineCoordinates';
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('settings');
     const savedFormData = new FormData(form);
@@ -123,4 +124,60 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     window.addEventListener('beforeunload', beforeUnloadHandler);
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.addEventListener('click', handleCanvasClick);
+
+    var coordinates = localStorage.getItem(LINE_KEY);
+    if (coordinates) {
+        const ctx = canvas.getContext('2d');
+        const { x1, y1, x2, y2 } = JSON.parse(coordinates);
+        drawRectangle(ctx, x1, y1);
+        drawRectangle(ctx, x2, y2);
+        drawLine(ctx, x1, y1, x2, y2);
+    }
+
+    var firstPoint = undefined;
+
+    function handleCanvasClick(event) {
+        if(!goalLinePaintingActive) {
+            return;
+        }
+        const canvasRect = canvas.getBoundingClientRect();
+        const x = event.clientX - canvasRect.left;
+        const y = event.clientY - canvasRect.top;
+
+        if (!firstPoint) {
+            clearCanvas()
+            drawRectangle(ctx, x, y);
+            firstPoint = { x, y };
+        } else {
+            drawRectangle(ctx, x, y);
+            drawLine(ctx, firstPoint.x, firstPoint.y, x, y);
+            localStorage.setItem(LINE_KEY, JSON.stringify({ x1: firstPoint.x, y1: firstPoint.y, x2: x, y2: y }));
+            firstPoint = undefined;
+            goalLinePaintingActive = false;
+        }
+    }
+
+
 });
+
+function clearCanvas() {
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawRectangle(ctx, x, y) {
+    ctx.fillRect(x - 5, y - 5, 10, 10);
+}
+
+function drawLine(ctx, x1, y1, x2, y2) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+}
