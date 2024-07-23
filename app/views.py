@@ -4,26 +4,17 @@ This module contains the views for the Flask application.
 
 import datetime as dt
 import fnmatch
-import io
 import os
 import shutil
-import time
 
-import cv2
 import flask_socketio
-import libcamera
 import pigpio
 from flask import render_template, request, send_file, url_for
-from picamera2 import MappedArray
-from picamera2.encoders import MJPEGEncoder
-from picamera2.outputs import FileOutput
 from sqlalchemy import desc
 
-from app import app, db, models, picam2, socketio, pi
-from app.constants import (BUTTON_PIN, RACE_DIRECTORY_BASE,
-                           STATIC_DIRECTORY, TIMESTAMP_COLOUR, TIMESTAMP_FONT,
-                           TIMESTAMP_ORIGIN, TIMESTAMP_SCALE,
-                           TIMESTAMP_THICKNESS, WEBSOCKET_ROOM)
+from app import app, camera, db, models, pi, socketio
+from app.constants import (BUTTON_PIN, RACE_DIRECTORY_BASE, STATIC_DIRECTORY,
+                           WEBSOCKET_ROOM)
 
 
 def update_cage_status(_, level, tick):
@@ -33,7 +24,9 @@ def update_cage_status(_, level, tick):
     If the button is not pressed, the cage is considered open.
     """
     current_tick = pi.get_current_tick()
-    race_start_time = dt.datetime.now() - dt.timedelta(microseconds=pigpio.tickDiff(tick, current_tick))
+    race_start_time = dt.datetime.now() - dt.timedelta(
+        microseconds=pigpio.tickDiff(tick, current_tick)
+    )
     button_state = level
     if not button_state:
         # Cage is closed
@@ -49,70 +42,13 @@ def update_cage_status(_, level, tick):
                 current_race.started = True
                 db.session.commit()
                 socketio.emit("race", "Pågår", namespace="/", room=WEBSOCKET_ROOM)
-                start_film(
-                    current_race, race_start_time, config.start_filming_after, config.stop_filming_after
+                camera.start_film(
+                    current_race,
+                    race_start_time,
+                    config.start_filming_after,
+                    config.stop_filming_after,
+                    stop_race_actions,
                 )
-
-pi.callback(BUTTON_PIN, pigpio.EITHER_EDGE, update_cage_status)
-
-class SplitFrames(io.BufferedIOBase):
-    """
-    Splits a stream of MJPG bytes into separate jpeg frames.
-    """
-
-    def __init__(self, directory=None):
-        self.directory = directory
-        self.frame_num = 0
-        self.output = None
-
-    def write(self, buf):
-        if buf.startswith(b"\xff\xd8"):
-            # Start of new frame; close the old one (if any) and
-            # open a new output
-            if self.output:
-                self.output.close()
-            self.frame_num += 1
-            self.output = io.open(
-                f"{self.directory}/image_{self.frame_num:04d}.jpg", "wb"
-            )
-        self.output.write(buf)
-
-
-def apply_timestamp(frame, race_start_time):
-    """
-    Apply a timestamp to the given frame based on the race start time.
-    The timestamp is calculated as the difference between the current time and the race start time.
-    """
-    timestamp = f"{(dt.datetime.now() - race_start_time).total_seconds():0>5.2f}"
-    with MappedArray(frame, "main") as m:
-        cv2.putText(
-            m.array,
-            timestamp,
-            TIMESTAMP_ORIGIN,
-            TIMESTAMP_FONT,
-            TIMESTAMP_SCALE,
-            TIMESTAMP_COLOUR,
-            TIMESTAMP_THICKNESS,
-        )
-
-
-def start_film(current_race, race_start_time, start_filming_after, stop_filming_after):
-    """
-    Start recording the race and apply timestamps to the frames.
-    The recording starts after the specified start_filming_after time
-    and stops after the specified stop_filming_after time.
-    """
-    picam2.pre_callback = lambda frame: apply_timestamp(frame, race_start_time)
-    encoder = MJPEGEncoder(10000000)
-    race_directory = STATIC_DIRECTORY + RACE_DIRECTORY_BASE + current_race.start_time
-    os.makedirs(race_directory)
-    output = SplitFrames(directory=race_directory)
-
-    time.sleep(start_filming_after)
-    picam2.start_recording(encoder, FileOutput(output))
-    time.sleep(stop_filming_after - start_filming_after)
-    if picam2.started:
-        stop_race_actions(current_race)
 
 
 def cage_status():
@@ -149,14 +85,7 @@ def index():
             config.start_filming_after = request.form.get("start_filming_after")
             config.stop_filming_after = request.form.get("stop_filming_after")
             db.session.commit()
-        camera_config = picam2.camera_configuration()
-        if camera_config["transform"].hflip != config.flip_image:
-            camera_config["transform"] = libcamera.Transform(
-                hflip=config.flip_image, vflip=config.flip_image
-            )
-            picam2.stop()
-            picam2.configure(camera_config)
-            picam2.start()
+        camera.flip_image(config.flip_image)
 
     race_status = "Inte redo"
     races = (
@@ -227,6 +156,7 @@ def stop_race():
         stop_race_actions(current_race)
     return "OK"
 
+
 def stop_race_actions(current_race):
     """
     Stops recording, update the race in database, informs liteners and remove the timestamp callback.
@@ -234,12 +164,10 @@ def stop_race_actions(current_race):
     Args:
         current_race: The current race object.
     """
-    picam2.stop_recording()
+    camera.stop_film()
     current_race.running = False
     db.session.commit()
     flask_socketio.emit("race", "Inte redo", namespace="/", room=WEBSOCKET_ROOM)
-    picam2.pre_callback = None
-
 
 
 def image_count(race):
@@ -269,12 +197,9 @@ def take_photo():
     current_race = models.Race.query.filter_by(running=True).first()
     if current_race is not None:
         return send_file("static/active_race.png", mimetype="image/png")
-    picam2.start()
-    # Create an in-memory stream
-    my_stream = io.BytesIO()
-    picam2.capture_file(my_stream, format="jpeg")
-    my_stream.seek(0)
-    return send_file(my_stream, mimetype="image/jpeg")
+
+    return send_file(camera.take_photo(), mimetype="image/jpeg")
+
 
 @app.route("/reload")
 def reload():
