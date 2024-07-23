@@ -1,10 +1,10 @@
 import datetime as dt
 import io
 import os
-import time
 
 import cv2
 import libcamera
+import pause
 from picamera2 import MappedArray, Picamera2
 from picamera2.encoders import MJPEGEncoder
 from picamera2.outputs import FileOutput
@@ -117,9 +117,9 @@ class Camera:
         os.makedirs(race_directory)
         output = SplitFrames(directory=race_directory)
 
-        time.sleep(start_filming_after)
+        pause.until(race_start_time + dt.timedelta(seconds=start_filming_after))
         self.picam2.start_recording(encoder, FileOutput(output))
-        time.sleep(stop_filming_after - start_filming_after)
+        pause.until(race_start_time + dt.timedelta(seconds=stop_filming_after))
         if self.picam2.started:
             callback_func(current_race)
 

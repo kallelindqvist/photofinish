@@ -5,3 +5,4 @@ opencv-python>=4.10
 Flask-SocketIO>=5.3.6
 gunicorn>=22.0.0
 pigpio==1.78
+pause==0.3
