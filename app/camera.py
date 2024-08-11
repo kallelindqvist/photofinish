@@ -75,7 +75,7 @@ class Camera:
             frame: The frame to apply the timestamp to.
             race_start_time: The start time of the race.
         """
-        timestamp = f"{(dt.datetime.now() - race_start_time).total_seconds():0>5.2f}"
+        timestamp = f"{(time.monotonic_ns() - race_start_time)/1e9:0>5.2f}"
         with MappedArray(frame, "main") as m:
             cv2.putText(
                 m.array,
@@ -117,9 +117,11 @@ class Camera:
         os.makedirs(race_directory)
         output = SplitFrames(directory=race_directory)
 
-        pause.until(race_start_time + dt.timedelta(seconds=start_filming_after))
+        # race_start_time is a monotonic time
+        start_delay = (time.monotonic_ns() - race_start_time)/1e9
+        time.sleep(start_filming_after - start_delay)
         self.picam2.start_recording(encoder, FileOutput(output))
-        pause.until(race_start_time + dt.timedelta(seconds=stop_filming_after))
+        time.sleep(stop_filming_after - start_delay)
         if self.picam2.started:
             callback_func(current_race)
 

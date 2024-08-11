@@ -2,31 +2,27 @@
 This module contains the views for the Flask application.
 """
 
-import datetime as dt
 import fnmatch
 import os
 import shutil
+import time
 
 import flask_socketio
-import pigpio
+import lgpio
 from flask import render_template, request, send_file, url_for
 from sqlalchemy import desc
 
-from app import app, camera, db, models, pi, socketio
+from app import app, camera, db, handle, models, socketio
 from app.constants import (BUTTON_PIN, RACE_DIRECTORY_BASE, STATIC_DIRECTORY,
                            WEBSOCKET_ROOM)
 
 
-def update_cage_status(_, level, tick):
+def update_cage_status(_, __, level, race_start_time):
     """
     Update the status of the cage based on the button state.
     If the button is pressed, the cage is considered closed.
     If the button is not pressed, the cage is considered open.
     """
-    current_tick = pi.get_current_tick()
-    race_start_time = dt.datetime.now() - dt.timedelta(
-        microseconds=pigpio.tickDiff(tick, current_tick)
-    )
     button_state = level
     if not button_state:
         # Cage is closed
@@ -57,7 +53,7 @@ def cage_status():
     If the button is pressed, the cage is considered closed.
     If the button is not pressed, the cage is considered open.
     """
-    button_state = pi.read(BUTTON_PIN)
+    button_state = lgpio.gpio_read(handle, BUTTON_PIN)
     if not button_state:
         return "Stängd"
     else:
@@ -132,7 +128,7 @@ def start_race():
         print("Race is already running")
     else:
         current_race = models.Race()
-        current_race.start_time = dt.datetime.now().replace(microsecond=0).isoformat()
+        current_race.start_time = time.strftime("%Y%m%d-%H%M%S")
         current_race.running = True
         db.session.add(current_race)
         db.session.commit()

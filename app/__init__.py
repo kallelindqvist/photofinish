@@ -5,17 +5,13 @@ and sets up the necessary configurations and dependencies.
 
 import atexit
 
-from app.camera import Camera
-import pigpio
+import lgpio
 from flask import Flask
 from flask_socketio import SocketIO
 from flask_sqlalchemy import SQLAlchemy
 
+from app.camera import Camera
 from app.constants import BUTTON_PIN
-
-
-
-
 
 # create and configure the app
 app = Flask(__name__)
@@ -47,12 +43,16 @@ with app.app_context():
 
     camera = Camera(config.frames_per_second, config.flip_image, resolution)
 
-pi = pigpio.pi()
+handle = lgpio.gpiochip_open(4)
+err = lgpio.gpio_claim_alert(handle, BUTTON_PIN, lgpio.BOTH_EDGES, lgpio.SET_PULL_UP)
+if err != 0:
+    print(f"Error: {lgpio.error_text(err)}")
+    exit(1)
+
 # Register cleanup function for normal exit
-atexit.register(pi.stop)
-pi.set_mode(BUTTON_PIN, pigpio.INPUT)
-pi.set_pull_up_down(BUTTON_PIN, pigpio.PUD_UP)
+atexit.register(lgpio.gpio_free, handle, BUTTON_PIN)
 
 # Import views
 from app import views
-pi.callback(BUTTON_PIN, pigpio.EITHER_EDGE, views.update_cage_status)
+
+lgpio.callback(handle, BUTTON_PIN, lgpio.BOTH_EDGES, views.update_cage_status)
