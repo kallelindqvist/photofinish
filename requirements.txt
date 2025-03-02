@@ -6,3 +6,4 @@ Flask-SocketIO>=5.3.6
 gunicorn>=22.0.0
 pause==0.3
 lgpio==0.2.2.0
+eliot>=1.12.0

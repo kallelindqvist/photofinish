@@ -12,6 +12,8 @@ import lgpio
 from flask import render_template, request, send_file, url_for
 from sqlalchemy import desc
 
+from eliot import start_action
+
 from app import app, camera, db, handle, models, socketio
 from app.constants import (BUTTON_PIN, RACE_DIRECTORY_BASE, STATIC_DIRECTORY,
                            WEBSOCKET_ROOM)
@@ -59,7 +61,6 @@ def cage_status():
     else:
         return "Öppen"
 
-
 @app.route("/", methods=["GET", "POST"])
 def index():
     """
@@ -69,6 +70,7 @@ def index():
     current_race = models.Race.query.filter_by(running=True).first()
     if request.method == "POST":
         if bool(request.form.get("reset_everything")):
+            start_action(action_type="reset")
             db.session.delete(config)
             models.Race.query.delete()
             db.session.commit()
@@ -77,6 +79,7 @@ def index():
             shutil.rmtree(STATIC_DIRECTORY + RACE_DIRECTORY_BASE)
             os.makedirs(STATIC_DIRECTORY + RACE_DIRECTORY_BASE)
         else:
+            start_action(action_type="update_config")
             config.flip_image = bool(request.form.get("flip_image"))
             config.start_filming_after = request.form.get("start_filming_after")
             config.stop_filming_after = request.form.get("stop_filming_after")
@@ -123,19 +126,20 @@ def start_race():
     """
     Start a new race.
     """
-    current_race = models.Race.query.filter_by(running=True).first()
-    if current_race is not None:
-        print("Race is already running")
-    else:
-        current_race = models.Race()
-        current_race.start_time = time.strftime("%Y%m%d-%H%M%S")
-        current_race.running = True
-        db.session.add(current_race)
-        db.session.commit()
-        race_status = "Redo för start"
-        if current_race.started:
-            race_status = "Pågår"
-        flask_socketio.emit("race", race_status, namespace="/", room=WEBSOCKET_ROOM)
+    with start_action(action_type=start_race) as action:
+        current_race = models.Race.query.filter_by(running=True).first()
+        if current_race is not None:
+            print("Race is already running")
+        else:
+            current_race = models.Race()
+            current_race.start_time = time.strftime("%Y%m%d-%H%M%S")
+            current_race.running = True
+            db.session.add(current_race)
+            db.session.commit()
+            race_status = "Redo för start"
+            if current_race.started:
+                race_status = "Pågår"
+            flask_socketio.emit("race", race_status, namespace="/", room=WEBSOCKET_ROOM)
     return "OK"
 
 
@@ -144,12 +148,13 @@ def stop_race():
     """
     Stop the current race.
     """
-    current_race = models.Race.query.filter_by(running=True).first()
+    with start_action(action_type="stop_race") as action:
+        current_race = models.Race.query.filter_by(running=True).first()
 
-    if current_race is None:
-        print("No race is running")
-    else:
-        stop_race_actions(current_race)
+        if current_race is None:
+            print("No race is running")
+        else:
+            stop_race_actions(current_race)
     return "OK"
 
 
@@ -160,10 +165,11 @@ def stop_race_actions(current_race):
     Args:
         current_race: The current race object.
     """
-    camera.stop_film()
-    current_race.running = False
-    db.session.commit()
-    flask_socketio.emit("race", "Inte redo", namespace="/", room=WEBSOCKET_ROOM)
+    with start_action(action_type="stop_race_actions") as action:
+        camera.stop_film()
+        current_race.running = False
+        db.session.commit()
+        flask_socketio.emit("race", "Inte redo", namespace="/", room=WEBSOCKET_ROOM)
 
 
 def image_count(race):
@@ -202,6 +208,7 @@ def reload():
     """
     Reload gunicorn.
     """
+    start_action(action_type="reload_gunicorn")
     os.system("pkill -HUP gunicorn")
     return "OK"
 
@@ -211,6 +218,7 @@ def websocket_connect():
     """
     Handle WebSocket connection event.
     """
+    start_action(action_type="websocket_connect")
     flask_socketio.join_room(WEBSOCKET_ROOM)
 
 
@@ -219,6 +227,7 @@ def websocket_disconnect():
     """
     Handle WebSocket disconnection event.
     """
+    start_action(action_type="websocket_disconnect")
     flask_socketio.leave_room(WEBSOCKET_ROOM)
 
 

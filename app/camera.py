@@ -1,13 +1,14 @@
-import datetime as dt
 import io
 import os
+import time
 
 import cv2
 import libcamera
-import pause
 from picamera2 import MappedArray, Picamera2
 from picamera2.encoders import MJPEGEncoder
 from picamera2.outputs import FileOutput
+
+from eliot import start_action
 
 from app.constants import (RACE_DIRECTORY_BASE, STATIC_DIRECTORY,
                            TIMESTAMP_COLOUR, TIMESTAMP_FONT, TIMESTAMP_ORIGIN,
@@ -42,7 +43,7 @@ class Camera:
     Represents a camera used for recording races and capturing photos.
     """
 
-    def __init__(self, frames_per_second=100, flip_image=False, resolution=(640, 480)):
+    def __init__(self, frames_per_second=100, flip_image=False, resolution=(1332, 990)):
         """
         Initializes a Camera object.
 
@@ -107,28 +108,30 @@ class Camera:
             stop_filming_after: The time to stop the recording after starting.
             callback_func: The callback function to be called after the recording stops.
         """
-        self.picam2.pre_callback = lambda frame: self.apply_timestamp(
-            frame, race_start_time
-        )
-        encoder = MJPEGEncoder(10000000)
-        race_directory = (
-            STATIC_DIRECTORY + RACE_DIRECTORY_BASE + current_race.start_time
-        )
-        os.makedirs(race_directory)
-        output = SplitFrames(directory=race_directory)
+        with start_action(action_type="start_film") as action:
+            self.picam2.pre_callback = lambda frame: self.apply_timestamp(
+                frame, race_start_time
+            )
+            encoder = MJPEGEncoder(10000000)
+            race_directory = (
+                STATIC_DIRECTORY + RACE_DIRECTORY_BASE + current_race.start_time
+            )
+            os.makedirs(race_directory)
+            output = SplitFrames(directory=race_directory)
 
-        # race_start_time is a monotonic time
-        start_delay = (time.monotonic_ns() - race_start_time)/1e9
-        time.sleep(start_filming_after - start_delay)
-        self.picam2.start_recording(encoder, FileOutput(output))
-        time.sleep(stop_filming_after - start_delay)
-        if self.picam2.started:
-            callback_func(current_race)
+            # race_start_time is a monotonic time
+            start_delay = (time.monotonic_ns() - race_start_time)/1e9
+            time.sleep(start_filming_after - start_delay)
+            self.picam2.start_recording(encoder, FileOutput(output))
+            time.sleep(stop_filming_after - start_delay)
+            if self.picam2.started:
+                callback_func(current_race)
 
     def stop_film(self):
         """
         Stop the recording.
         """
+        start_action(action_type="stop_film")
         self.picam2.stop_recording()
         self.picam2.pre_callback = None
 

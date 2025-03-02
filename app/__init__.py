@@ -2,7 +2,6 @@
 This module initializes the Flask application 
 and sets up the necessary configurations and dependencies.
 """
-
 import atexit
 
 import lgpio
@@ -12,6 +11,12 @@ from flask_sqlalchemy import SQLAlchemy
 
 from app.camera import Camera
 from app.constants import BUTTON_PIN
+
+from eliot import to_file, Action, start_action, add_global_fields
+import sys
+
+add_global_fields(process="server")
+to_file(sys.stdout)
 
 # create and configure the app
 app = Flask(__name__)
