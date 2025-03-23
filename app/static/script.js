@@ -15,19 +15,8 @@ function changeImage(e) {
     e.target.focus()
 }
 
-function updateImage() {
-    var img = document.getElementById('image');
-    img.src = '/camera?' + new Date().getTime();
-}
-
 function raceChanged(race) {
-    if (updateImageId != null) {
-        clearInterval(updateImageId);
-    }
-    if (race === 'preview') {
-        updateImageId = setInterval(updateImage, 500);
-    }
-    else {
+    if (race !== 'preview') {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', '/image_count?race=' + race, true);
         xhr.onreadystatechange = function () {

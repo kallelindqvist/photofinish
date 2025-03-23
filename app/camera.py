@@ -9,6 +9,7 @@ from picamera2.encoders import MJPEGEncoder
 from picamera2.outputs import FileOutput
 
 from eliot import start_action
+import threading
 
 from app.constants import (RACE_DIRECTORY_BASE, STATIC_DIRECTORY,
                            TIMESTAMP_COLOUR, TIMESTAMP_FONT, TIMESTAMP_ORIGIN,
@@ -91,6 +92,12 @@ class Camera:
         self.picam2.configure(video_config)
         self.picam2.start()
 
+    def start_camera(self):
+        """
+        Start the camera.
+        """
+        self.picam2.start()
+
     def apply_timestamp(self, frame, race_start_time):
         """
         Apply a timestamp to the given frame based on the race start time.
@@ -163,19 +170,47 @@ class Camera:
         self.picam2.stop_recording()
         self.picam2.pre_callback = None
 
-    def take_photo(self):
+    def get_video_stream(self):
         """
-        Capture a photo.
-
+        Stream video from the camera.
+        
         Returns:
-            The captured photo as a BytesIO object.
+            A generator that yields JPEG frames suitable for MJPEG streaming.
         """
-        self.picam2.start()
-        # Create an in-memory stream
-        my_stream = io.BytesIO()
-        self.picam2.capture_file(my_stream, format="jpeg")
-        my_stream.seek(0)
-        return my_stream
+        
+        class StreamingOutput(io.BufferedIOBase):
+            def __init__(self):
+                self.frame = None
+                self.condition = threading.Condition()
+            
+            def write(self, buf):
+                if buf.startswith(b'\xff\xd8'):
+                    with self.condition:
+                        self.frame = buf
+                        self.condition.notify_all()
+                return len(buf)
+        
+        output = StreamingOutput()
+        encoder = MJPEGEncoder(10000000)
+        
+        # Start recording to our streaming output
+        self.picam2.start_recording(encoder, FileOutput(output))
+        
+        try:
+            while True:
+                with output.condition:
+                    output.condition.wait(timeout=1)  # More reasonable timeout
+                    time.sleep(0.1)  # Add 100ms delay between frames to slow down the stream
+                    if output.frame is None:
+                        continue
+                    frame = output.frame
+                
+                # Yield in a format suitable for MJPEG streaming
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        finally:
+            # Ensure we stop recording when the stream ends
+            self.picam2.stop_recording()
 
     def flip_image(self, flip_image):
         """

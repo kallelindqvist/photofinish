@@ -9,7 +9,7 @@ import time
 
 import flask_socketio
 import lgpio
-from flask import render_template, request, send_file, url_for
+from flask import render_template, request, send_file, url_for, Response
 from sqlalchemy import desc
 
 from eliot import start_action, Action
@@ -108,7 +108,7 @@ def index():
                 filename=RACE_DIRECTORY_BASE + races[0].start_time + "/image_0001.jpg",
             )
         else:
-            image_src = url_for("take_photo")
+            image_src = url_for("video_stream")
     return render_template(
         "index.html",
         cage_status=cage_status(),
@@ -140,6 +140,11 @@ def start_race():
 
             db.session.add(current_race)
             db.session.commit()
+            #Make sure the camera is not filming
+            camera.stop_film()
+            # Start the camera to warm it up
+            camera.start_camera()
+
             if current_race.started:
                 action.log(message_type="debug", message="Race started")
                 race_status = "Pågår"
@@ -197,18 +202,18 @@ def get_image_count():
     """
     return str(image_count(request.args.get("race")))
 
-
-@app.route("/camera")
-def take_photo():
+@app.route("/video_stream")
+def video_stream():
     """
-    Take a photo using the camera and return it as a response.
+    Stream video from the camera.
     """
-    current_race = models.Race.query.filter_by(running=True).first()
-    if current_race is not None:
-        return send_file("static/active_race.png", mimetype="image/png")
-
-    return send_file(camera.take_photo(), mimetype="image/jpeg")
-
+    
+    def generate():
+        for frame in camera.get_video_stream():
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route("/reload")
 def reload():
