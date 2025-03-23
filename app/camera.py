@@ -56,13 +56,37 @@ class Camera:
 
         frame_duration_limit = int(1000000 / frames_per_second)
 
+        # Set camera controls for high-speed capture
+        tuning = self.picam2.camera_controls
+        if tuning:
+            # Disable auto features that might impact frame rate
+            self.picam2.set_controls({
+                "AeEnable": False,
+                "AwbEnable": False,
+                "ExposureTime": 1000,  # Further reduced exposure time for faster frame rate
+                "AnalogueGain": 5.0,  # Higher gain to reduce frame drops
+                "ColourGains": (1.0, 1.0),  # Fixed white balance gains
+                "Sharpness": 0.0,  # Disable sharpening to reduce processing overhead
+                "NoiseReductionMode": 0  # Disable noise reduction
+            })
+
+        self.capture_config = self.picam2.create_video_configuration(
+            transform=libcamera.Transform(hflip=flip_image, vflip=flip_image),
+            main={"size": resolution, "format": "XBGR8888"},  # 
+        )
         video_config = self.picam2.create_video_configuration(
             transform=libcamera.Transform(hflip=flip_image, vflip=flip_image),
-            main={"size": resolution},
-            sensor={"output_size": resolution, "bit_depth": 10},
+            main={"size": resolution, "format": "YUV420"},  # More efficient format for high FPS
+            buffer_count=16,  # Further increased buffer count to handle frame processing
+            encode="main",  # Encode from the main stream
+            sensor={"output_size": resolution, "bit_depth": 8},  # Use 8-bit depth
             controls={
-                "FrameDurationLimits": (frame_duration_limit, frame_duration_limit)
+                "FrameDurationLimits": (frame_duration_limit, frame_duration_limit),
+                "NoiseReductionMode": libcamera.controls.draft.NoiseReductionModeEnum.Off,
+                "FrameRate": frames_per_second,
+                "AwbMode": 0  # Disable auto white balance
             },
+            queue=8  # Further increased queue size for smoother processing
         )
         self.picam2.configure(video_config)
         self.picam2.start()
@@ -122,10 +146,14 @@ class Camera:
             # race_start_time is a monotonic time
             start_delay = (time.monotonic_ns() - race_start_time)/1e9
             time.sleep(start_filming_after - start_delay)
+            action.log(message_type="debug", message="Start recording")
             self.picam2.start_recording(encoder, FileOutput(output))
             time.sleep(stop_filming_after - start_delay)
             if self.picam2.started:
                 callback_func(current_race)
+                action.log(message_type="debug", message="Recording stopped")
+            else:
+                action.log(message_type="warn", message="Recording already stopped")
 
     def stop_film(self):
         """

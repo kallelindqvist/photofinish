@@ -16,6 +16,7 @@ class Race(db.Model):
     start_time: Mapped[str] = mapped_column()
     running: Mapped[bool] = mapped_column(default=False)
     started: Mapped[bool] = mapped_column(default=False)
+    eliot_task_id: Mapped[str] = mapped_column()
 
 
 class Config(db.Model):

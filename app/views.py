@@ -12,7 +12,7 @@ import lgpio
 from flask import render_template, request, send_file, url_for
 from sqlalchemy import desc
 
-from eliot import start_action
+from eliot import start_action, Action
 
 from app import app, camera, db, handle, models, socketio
 from app.constants import (BUTTON_PIN, RACE_DIRECTORY_BASE, STATIC_DIRECTORY,
@@ -36,17 +36,18 @@ def update_cage_status(_, __, level, race_start_time):
         with app.app_context():
             current_race = models.Race.query.filter_by(running=True).first()
             if current_race is not None:
-                config = models.Config.query.first()
-                current_race.started = True
-                db.session.commit()
-                socketio.emit("race", "Pågår", namespace="/", room=WEBSOCKET_ROOM)
-                camera.start_film(
-                    current_race,
-                    race_start_time,
-                    config.start_filming_after,
-                    config.stop_filming_after,
-                    stop_race_actions,
-                )
+                with Action.continue_task(task_id=current_race.eliot_task_id, action_type="update_cage_status") as action:
+                    config = models.Config.query.first()
+                    current_race.started = True
+                    db.session.commit()
+                    socketio.emit("race", "Pågår", namespace="/", room=WEBSOCKET_ROOM)
+                    camera.start_film(
+                        current_race,
+                        race_start_time,
+                        config.start_filming_after,
+                        config.stop_filming_after,
+                        stop_race_actions,
+                    )
 
 
 def cage_status():
@@ -126,19 +127,25 @@ def start_race():
     """
     Start a new race.
     """
-    with start_action(action_type=start_race) as action:
-        current_race = models.Race.query.filter_by(running=True).first()
-        if current_race is not None:
-            print("Race is already running")
-        else:
+    current_race = models.Race.query.filter_by(running=True).first()
+    if current_race is not None:
+        with start_action(action_type="start_race") as action:
+            action.log(message_type="warn", message="Race is already running")
+    else:
+        with start_action(action_type="start_race") as action:
             current_race = models.Race()
             current_race.start_time = time.strftime("%Y%m%d-%H%M%S")
             current_race.running = True
+            current_race.eliot_task_id = action.serialize_task_id()
+
             db.session.add(current_race)
             db.session.commit()
-            race_status = "Redo för start"
             if current_race.started:
+                action.log(message_type="debug", message="Race started")
                 race_status = "Pågår"
+            else:
+                action.log(message_type="debug", message="Race ready to start")
+                race_status = "Redo för start"
             flask_socketio.emit("race", race_status, namespace="/", room=WEBSOCKET_ROOM)
     return "OK"
 
@@ -150,10 +157,10 @@ def stop_race():
     """
     with start_action(action_type="stop_race") as action:
         current_race = models.Race.query.filter_by(running=True).first()
-
         if current_race is None:
-            print("No race is running")
+            action.log(message_type="warn", message="No race is running")
         else:
+            action.log(message_type="warn", message="Stopping race early")
             stop_race_actions(current_race)
     return "OK"
 
