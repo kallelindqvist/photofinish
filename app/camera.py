@@ -180,21 +180,20 @@ class Camera:
         # Start recording to our streaming output
         self.picam2.start_recording(encoder, FileOutput(output))
         
-        try:
-            while True:
-                with output.condition:
-                    output.condition.wait()
-                    time.sleep(0.04) # Add a delay between frames to slow down the stream
-                    if output.frame is None:
-                        continue
-                    frame = output.frame
-                
-                # Yield in a format suitable for MJPEG streaming
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-        finally:
-            # Ensure we stop recording when the stream ends
-            self.picam2.stop_recording()
+        if not self.picam2.started:
+            self.picam2.start()
+
+        while True:
+            with output.condition:
+                output.condition.wait()
+                time.sleep(0.04) # Add a delay between frames to slow down the stream
+                if output.frame is None:
+                    continue
+                frame = output.frame
+            
+            # Yield in a format suitable for MJPEG streaming
+            yield (b'--frame\r\n'
+                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
     def flip_image(self, flip_image):
         """
