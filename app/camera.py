@@ -57,24 +57,6 @@ class Camera:
 
         frame_duration_limit = int(1000000 / frames_per_second)
 
-        # Set camera controls for high-speed capture
-        tuning = self.picam2.camera_controls
-        if tuning:
-            # Disable auto features that might impact frame rate
-            self.picam2.set_controls({
-                "AeEnable": False,
-                "AwbEnable": False,
-                "ExposureTime": 1000,  # Further reduced exposure time for faster frame rate
-                "AnalogueGain": 5.0,  # Higher gain to reduce frame drops
-                "ColourGains": (1.0, 1.0),  # Fixed white balance gains
-                "Sharpness": 0.0,  # Disable sharpening to reduce processing overhead
-                "NoiseReductionMode": 0  # Disable noise reduction
-            })
-
-        self.capture_config = self.picam2.create_video_configuration(
-            transform=libcamera.Transform(hflip=flip_image, vflip=flip_image),
-            main={"size": resolution, "format": "XBGR8888"},  # 
-        )
         video_config = self.picam2.create_video_configuration(
             transform=libcamera.Transform(hflip=flip_image, vflip=flip_image),
             main={"size": resolution, "format": "YUV420"},  # More efficient format for high FPS
@@ -83,9 +65,11 @@ class Camera:
             sensor={"output_size": resolution, "bit_depth": 8},  # Use 8-bit depth
             controls={
                 "FrameDurationLimits": (frame_duration_limit, frame_duration_limit),
-                "NoiseReductionMode": libcamera.controls.draft.NoiseReductionModeEnum.Off,
                 "FrameRate": frames_per_second,
-                "AwbMode": 0  # Disable auto white balance
+                "AeEnable": False,
+                "AwbEnable": True,  # Enable auto white balance to fix green tint
+                "AnalogueGain": 5.0,  # Higher gain to reduce frame drops
+                "ExposureTime": 2500,  # Longer exposure time to reduce frame drops
             },
             queue=8  # Further increased queue size for smoother processing
         )
@@ -199,8 +183,8 @@ class Camera:
         try:
             while True:
                 with output.condition:
-                    output.condition.wait(timeout=1)  # More reasonable timeout
-                    time.sleep(0.1)  # Add 100ms delay between frames to slow down the stream
+                    output.condition.wait()
+                    time.sleep(0.04) # Add a delay between frames to slow down the stream
                     if output.frame is None:
                         continue
                     frame = output.frame

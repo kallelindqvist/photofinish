@@ -1,4 +1,3 @@
-let updateImageId = null;
 
 const slider = document.getElementById('image_index');
 slider.onchange = changeImage;
@@ -16,7 +15,9 @@ function changeImage(e) {
 }
 
 function raceChanged(race) {
-    if (race !== 'preview') {
+    if (race === 'preview') {
+        document.getElementById('image').src = '/video_stream';
+    } else {
         var xhr = new XMLHttpRequest();
         xhr.open('GET', '/image_count?race=' + race, true);
         xhr.onreadystatechange = function () {
@@ -38,7 +39,6 @@ function raceChanged(race) {
 }
 
 function startRace() {
-    clearInterval(updateImageId);
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/start_race', true);
     xhr.setRequestHeader('Content-Type', 'application/json');
@@ -66,6 +66,13 @@ function removeBeforeUnloadEventListener() {
 
 const LINE_KEY = 'lineCoordinates';
 document.addEventListener('DOMContentLoaded', function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const training = urlParams.get('training');
+
+    if (training === 'true') {
+        setTimeout(startRace, 1000)
+    }
+
     const form = document.getElementById('settings');
     const savedFormData = new FormData(form);
     form.addEventListener('change', function (event) {

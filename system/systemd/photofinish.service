@@ -6,7 +6,10 @@
  Type=simple
  User=pi
  WorkingDirectory=/home/pi/code/github.com/kallelindqvist/photofinish/
- ExecStart=/home/pi/code/github.com/kallelindqvist/photofinish/venv/bin/gunicorn --threads 5 -b localhost:5000 app:app
+ ExecStart=/home/pi/code/github.com/kallelindqvist/photofinish/pienv/bin/gunicorn --threads 5 -b localhost:5000 app:app
+ StandardOutput=journal
+ StandardError=journal
+ SyslogIdentifier=photofinish
 
  [Install]
  WantedBy=multi-user.target
