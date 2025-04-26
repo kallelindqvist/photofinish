@@ -67,9 +67,14 @@ class Camera:
                 "FrameDurationLimits": (frame_duration_limit, frame_duration_limit),
                 "FrameRate": frames_per_second,
                 "AeEnable": False,
-                "AwbEnable": True,  # Enable auto white balance to fix green tint
-                "AnalogueGain": 5.0,  # Higher gain to reduce frame drops
-                "ExposureTime": 2500,  # Longer exposure time to reduce frame drops
+                #"AeExposureMode": libcamera.controls.AeExposureModeEnum.Short,
+                #"AeConstraintMode": libcamera.controls.AeConstraintModeEnum.Highlight,
+                #"AeFlickerMode": libcamera.controls.AeFlickerModeEnum.Off,
+                #"AeMeteringMode": libcamera.controls.AeMeteringModeEnum.CentreWeighted,
+                #"AwbEnable": True,  # Enable auto white balance to fix green tint
+                "AnalogueGain": 8.0,  # Higher gain to reduce frame drops
+                "ExposureTime": 1000,  # Longer exposure time to reduce frame drops
+                "Brightness": 0.24
             },
             queue=8  # Further increased queue size for smoother processing
         )
