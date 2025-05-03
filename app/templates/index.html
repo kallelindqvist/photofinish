@@ -2,14 +2,13 @@
 
 {% block content %}
 {% set name='baz' %}
-<h1>Målkamera</h1>
 <div class="parent">
   <div class="divImage">
     <fieldset>
       <legend>Race</legend>
       <select id="race" onchange='raceChanged(this.value)'>
         {% for race in races %}
-        <option value="{{ race.start_time }}">{{ race.start_time }}</option>
+        <option value="{{ race.start_time }}">Race {{ loop.revindex }} - {{ race.start_time }}</option>
         {% endfor %}
         <option value="preview">Förhandsgranska</option>
       </select>
@@ -20,27 +19,22 @@
       <input type="range" id="image_index" name="image_index" value="1" min="1" max="{{ max }}" class="slider"/>
       <br>
 
-      </button>
-      <button type="submit" onclick="startRace()">
-        Redo för race
-      </button>
-      <button type="submit" onclick="stopRace()">
-        Avsluta race
-      </button>
+
     </fieldset>
   </div>
   <div class="divStatus">
     <fieldset class="status">
       <legend>Status</legend>
       <label>Hundbur</label><span id="cage_status">{{ cage_status }}</span>
+      <br/>
       <label>Race</label><span id="race_status">{{ race_status }}</span>
     </fieldset>
   </div>
 
   <div class="divSettings">
-    <form id="settings" method="post">
-      <fieldset class="settings">
-        <legend>Inställningar</legend>
+    <fieldset class="settings">
+      <legend>Inställningar</legend>
+      <form id="settings" method="post">
         <label>Vänd upp och ner på bilden</label><input name="flip_image" type="checkbox" value="true" {{ 'checked' if
           flip_image }} /><br>
         <label>Börja filma efter</label><input name="start_filming_after" type="number" min="0" max="99"
@@ -52,17 +46,17 @@
         <button type="submit" onclick="removeBeforeUnloadEventListener()">
           Spara inställningar
         </button>
-
-      </fieldset>
-    </form>
+      </form>
+    </fieldset>
+    <br/>
     <fieldset class="goal_line">
       <legend>Mållinje</legend>
       <button onclick="goalLinePaintingActive=true">Rita Mållinje</button>
       <button onclick="clearCanvas()">Rensa Mållinje</button>
     </fieldset>
-    <form method="post"
-      onsubmit="return confirm('Detta kommer ta bort alla race och återställa all inställningar, vill du fortsätta?');">
-      <fieldset class="settings">
+    <br/>
+    <fieldset class="reset">
+      <legend>Återställ allting</legend>
       <form method="post"
         onsubmit="return confirm('Detta kommer ta bort racet ' + selectedRaceName + ', vill du fortsätta?');">
         <input type="hidden" id="deleteRaceInput" name="deleteRace" value="undefined" />
@@ -70,13 +64,25 @@
           Radera detta race
         </button>
       </form>
+      <form method="post"
+        onsubmit="return confirm('Detta kommer ta bort alla race och återställa all inställningar, vill du fortsätta?');">
         <input type="hidden" name="reset_everything" value="1" />
-        <legend>Återställ allting</legend>
         <button type="submit" onclick="removeBeforeUnloadEventListener()">
           Återställ allting
         </button>
-      </fieldset>
-    </form>
+      </form>
+    </fieldset>
+  </div>
+  <div class="divActions">
+    <fieldset class="actions">
+      <legend>Åtgärder</legend>
+      <button type="submit" onclick="startRace()">
+        Redo för race
+      </button>
+      <button type="submit" hidden="true" onclick="stopRace()">
+        Avsluta race
+      </button>
+    </fieldset>
   </div>
 </div>
 {% endblock %}

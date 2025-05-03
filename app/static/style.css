@@ -1,48 +1,48 @@
 .parent {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: 2fr 1fr;
+    grid-template-rows: 1fr 3fr 1fr;
     grid-column-gap: 3em;
     grid-row-gap: 3em;
 }
 
 .divImage {
-    grid-area: 1 / 1 / 3 / 2;
-}
-
-.divStatus {
-    grid-area: 1 / 2 / 2 / 3;
-}
-
-.divSettings {
-    grid-area: 2 / 2 / 3 / 3;
-}
-
-fieldset.status {
+    grid-area: 1 / 1 / 4 / 2;
     display: grid;
     grid-template-columns: max-content max-content;
     grid-gap: 3px;
 }
 
-fieldset.status label {
-    text-align: right;
-}
-
-fieldset.status label:after {
-    content: ":";
-}
-
-fieldset.settings {
+.divStatus {
     display: grid;
-    grid-template-columns: max-content max-content max-content;
+    grid-template-columns: max-content max-content;
     grid-gap: 3px;
+    grid-area: 1 / 2 / 2 / 3;
 }
 
-fieldset.settings label {
+.divSettings {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    grid-gap: 3px;
+    grid-area: 2 / 2 / 3 / 3;
+}
+
+.divActions {
+    display: grid;
+    grid-template-columns: max-content max-content;
+    grid-gap: 3px;
+    grid-area: 3 / 2 / 4 / 3;
+}
+
+fieldset {
+    height: fit-content
+}
+
+fieldset label {
     text-align: right;
 }
 
-fieldset.settings label:after {
+fieldset label:after {
     content: ":";
 }
 
@@ -103,4 +103,9 @@ footer {
 
 .slider {
     width: 100%;
+}
+
+.actions button {
+    width: 100%;
+    height: 5em;
 }
