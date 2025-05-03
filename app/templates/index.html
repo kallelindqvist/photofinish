@@ -63,6 +63,13 @@
     <form method="post"
       onsubmit="return confirm('Detta kommer ta bort alla race och återställa all inställningar, vill du fortsätta?');">
       <fieldset class="settings">
+      <form method="post"
+        onsubmit="return confirm('Detta kommer ta bort racet ' + selectedRaceName + ', vill du fortsätta?');">
+        <input type="hidden" id="deleteRaceInput" name="deleteRace" value="undefined" />
+        <button type="submit" id="deleteRaceButton" onclick="removeBeforeUnloadEventListener()">
+          Radera detta race
+        </button>
+      </form>
         <input type="hidden" name="reset_everything" value="1" />
         <legend>Återställ allting</legend>
         <button type="submit" onclick="removeBeforeUnloadEventListener()">

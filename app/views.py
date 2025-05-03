@@ -70,6 +70,7 @@ def index():
     config = models.Config.query.first()
     current_race = models.Race.query.filter_by(running=True).first()
     if request.method == "POST":
+        raceNameToDelete = request.form.get("deleteRace")
         if bool(request.form.get("reset_everything")):
             start_action(action_type="reset")
             db.session.delete(config)
@@ -79,6 +80,10 @@ def index():
             db.session.commit()
             shutil.rmtree(STATIC_DIRECTORY + RACE_DIRECTORY_BASE)
             os.makedirs(STATIC_DIRECTORY + RACE_DIRECTORY_BASE)
+        if raceNameToDelete is not None:
+            if raceNameToDelete != "undefined":
+                models.Race.query.filter_by(start_time=raceNameToDelete).delete()
+                db.session.commit()
         else:
             start_action(action_type="update_config")
             config.flip_image = bool(request.form.get("flip_image"))

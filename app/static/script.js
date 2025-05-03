@@ -6,6 +6,7 @@ slider.focus()
 const raceSelect = document.getElementById('race');
 raceSelect.selectedIndex = 0;
 raceSelect.dispatchEvent(new Event('change'));
+var selectedRaceName = raceSelect.options[raceSelect.selectedIndex].value;
 
 function changeImage(e) {
     e.target.disabled = true
@@ -17,7 +18,12 @@ function changeImage(e) {
 function raceChanged(race) {
     if (race === 'preview') {
         document.getElementById('image').src = '/video_stream';
+        selectedRaceName = undefined;
+        document.getElementById('deleteRaceButton').disabled = true;
     } else {
+        document.getElementById('deleteRaceButton').disabled = false;
+        selectedRaceName = raceSelect.options[raceSelect.selectedIndex].text;
+        document.getElementById('deleteRaceInput').value = race;
         var xhr = new XMLHttpRequest();
         xhr.open('GET', '/image_count?race=' + race, true);
         xhr.onreadystatechange = function () {
