@@ -138,7 +138,9 @@ class Camera:
 
             # race_start_time is a monotonic time
             start_delay = (time.monotonic_ns() - race_start_time)/1e9
-            time.sleep(start_filming_after - start_delay)
+            time_to_sleep = start_filming_after - start_delay
+            if time_to_sleep > 0:
+                time.sleep(start_filming_after)
             action.log(message_type="debug", message="Start recording")
             self.picam2.start_recording(encoder, FileOutput(output))
             time.sleep(stop_filming_after - start_delay)
