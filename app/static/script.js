@@ -1,6 +1,6 @@
 
 const slider = document.getElementById('image_index');
-slider.onchange = changeImage;
+slider.oninput = changeImage;
 slider.focus()
 
 const raceSelect = document.getElementById('race');
@@ -9,10 +9,7 @@ raceSelect.dispatchEvent(new Event('change'));
 var selectedRaceName = raceSelect.options[raceSelect.selectedIndex].value;
 
 function changeImage(e) {
-    e.target.disabled = true
     image.src = image.src.replace(/\d{4}.jpg/, e.target.value.padStart(4, 0) + '.jpg')
-    e.target.disabled = false
-    e.target.focus()
 }
 
 function raceChanged(race) {
