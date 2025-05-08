@@ -29,10 +29,10 @@ def update_cage_status(_, __, level, race_start_time):
     if not button_state:
         # Cage is closed
         with app.test_request_context("/"):
-            flask_socketio.emit("cage", "Stängd", namespace="/", room=WEBSOCKET_ROOM)
+            flask_socketio.emit("cage", "🟢 Stängd", namespace="/", room=WEBSOCKET_ROOM)
     else:
         with app.test_request_context("/"):
-            flask_socketio.emit("cage", "Öppen", namespace="/", room=WEBSOCKET_ROOM)
+            flask_socketio.emit("cage", "🟡 Öppen", namespace="/", room=WEBSOCKET_ROOM)
         with app.app_context():
             current_race = models.Race.query.filter_by(running=True).first()
             if current_race is not None:
@@ -40,7 +40,7 @@ def update_cage_status(_, __, level, race_start_time):
                     config = models.Config.query.first()
                     current_race.started = True
                     db.session.commit()
-                    socketio.emit("race", "Pågår", namespace="/", room=WEBSOCKET_ROOM)
+                    socketio.emit("race", "🔴 Pågår", namespace="/", room=WEBSOCKET_ROOM)
                     camera.start_film(
                         current_race,
                         race_start_time,
@@ -58,9 +58,9 @@ def cage_status():
     """
     button_state = lgpio.gpio_read(handle, BUTTON_PIN)
     if not button_state:
-        return "Stängd"
+        return "🟢 Stängd"
     else:
-        return "Öppen"
+        return "🟡 Öppen"
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -92,7 +92,7 @@ def index():
             db.session.commit()
         camera.flip_image(config.flip_image)
 
-    race_status = "Inte redo"
+    race_status = "🟡 Inte redo"
     races = (
         models.Race.query.filter_by(running=False, started=True)
         .order_by(desc(models.Race.start_time))
@@ -101,9 +101,9 @@ def index():
     image_count_max = 1
     if current_race is not None and current_race.running:
         if current_race.started:
-            race_status = "Pågår"
+            race_status = "🔴 Pågår"
         else:
-            race_status = "Redo för start"
+            race_status = "🟢 Redo för start"
         image_src = url_for("static", filename="active_race.png")
     else:
         if races is not None and len(races) > 0:
@@ -152,10 +152,10 @@ def start_race():
 
             if current_race.started:
                 action.log(message_type="debug", message="Race started")
-                race_status = "Pågår"
+                race_status = "🔴 Pågår"
             else:
                 action.log(message_type="debug", message="Race ready to start")
-                race_status = "Redo för start"
+                race_status = "🟢 Redo för start"
             flask_socketio.emit("race", race_status, namespace="/", room=WEBSOCKET_ROOM)
     return "OK"
 
@@ -186,7 +186,7 @@ def stop_race_actions(current_race):
         camera.stop_film()
         current_race.running = False
         db.session.commit()
-        flask_socketio.emit("race", "Inte redo", namespace="/", room=WEBSOCKET_ROOM)
+        flask_socketio.emit("race", "🟡 Inte redo", namespace="/", room=WEBSOCKET_ROOM)
 
 
 def image_count(race):
