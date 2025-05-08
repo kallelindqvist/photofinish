@@ -1,42 +1,42 @@
 .parent {
     display: grid;
-    grid-template-columns: 2fr 1fr;
-    grid-template-rows: 1fr 3fr 1fr;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 2fr 2fr;
     grid-column-gap: 3em;
-    grid-row-gap: 3em;
+    grid-template-columns: max-content max-content;
+    grid-template-columns: max-content max-content;
+    row-gap: 4em;
+    height: inherit;
 }
 
 .divImage {
     grid-area: 1 / 1 / 4 / 2;
     display: grid;
-    grid-template-columns: max-content max-content;
-    grid-gap: 3px;
+}
+
+.divImage fieldset {
+    border: none;
 }
 
 .divStatus {
-    display: grid;
-    grid-template-columns: max-content max-content;
-    grid-gap: 3px;
     grid-area: 1 / 2 / 2 / 3;
 }
 
 .divSettings {
     display: grid;
-    grid-template-columns: max-content max-content;
-    grid-gap: 3px;
     grid-area: 2 / 2 / 3 / 3;
 }
 
 .divActions {
     display: grid;
-    grid-template-columns: max-content max-content;
-    grid-gap: 3px;
     grid-area: 3 / 2 / 4 / 3;
+    height; fit-content;
 }
 
 fieldset {
     height: fit-content
 }
+
 
 fieldset label {
     text-align: right;
@@ -72,6 +72,7 @@ body {
 
 .content-wrapper {
     flex: 1;
+    height: inherit;
 }
 
 footer {
