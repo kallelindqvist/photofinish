@@ -75,10 +75,10 @@
   <div class="divActions">
     <fieldset class="actions">
       <legend>Åtgärder</legend>
-      <button id="ready_button" type="submit" onclick="startRace()">
+      <button id="ready_button" type="submit" {% if start_race_button_disabled %} disabled {% endif %} onclick="startRace()">
         Redo för race
       </button>
-      <button id="stop_button" type="submit" disabled="true" onclick="stopRace()">
+      <button id="stop_button" type="submit"  {% if stop_race_button_disabled %} disabled {% endif %} onclick="stopRace()">
         Avsluta race
       </button>
     </fieldset>

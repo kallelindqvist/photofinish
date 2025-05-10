@@ -42,6 +42,8 @@ function raceChanged(race) {
 }
 
 function startRace() {
+    var img = document.getElementById('image');
+    img.src = '/static/ready_for_race.png';
     var xhr = new XMLHttpRequest();
     xhr.open('POST', '/start_race', true);
     xhr.setRequestHeader('Content-Type', 'application/json');

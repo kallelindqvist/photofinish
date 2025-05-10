@@ -99,12 +99,18 @@ def index():
         .all()
     )
     image_count_max = 1
+    start_race_button_disabled = False
+    stop_race_button_disabled = True
     if current_race is not None and current_race.running:
         if current_race.started:
             race_status = "🔴 Pågår"
+            image_src = url_for("static", filename="active_race.png")
+            start_race_button_disabled = True
         else:
             race_status = "🟢 Redo för start"
-        image_src = url_for("static", filename="active_race.png")
+            image_src = url_for("static", filename="ready_for_race.png")
+            start_race_button_disabled = True
+            stop_race_button_disabled = False
     else:
         if races is not None and len(races) > 0:
             image_count_max = image_count(races[0].start_time)
@@ -124,6 +130,8 @@ def index():
         races=races,
         start_filming_after=config.start_filming_after,
         stop_filming_after=config.stop_filming_after,
+        start_race_button_disabled=start_race_button_disabled,
+        stop_race_button_disabled=stop_race_button_disabled
     )
 
 
