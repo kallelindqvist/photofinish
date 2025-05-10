@@ -4,8 +4,6 @@ slider.oninput = changeImage;
 slider.focus()
 
 const raceSelect = document.getElementById('race');
-raceSelect.selectedIndex = 0;
-raceSelect.dispatchEvent(new Event('change'));
 var selectedRaceName = raceSelect.options[raceSelect.selectedIndex].value;
 
 function changeImage(e) {
