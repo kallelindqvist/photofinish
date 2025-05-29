@@ -93,7 +93,9 @@ class Camera:
             frame: The frame to apply the timestamp to.
             race_start_time: The start time of the race.
         """
-        timestamp = f"{(time.monotonic_ns() - race_start_time)/1e9:0>5.2f}"
+        elapsed_ns = time.monotonic_ns() - race_start_time
+        elapsed_cs = round(elapsed_ns / 10_000_000)  # centiseconds (hundredths of a second)
+        timestamp = f"{elapsed_cs / 100:0>5.2f}"
         with MappedArray(frame, "main") as m:
             cv2.putText(
                 m.array,
