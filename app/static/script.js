@@ -109,14 +109,17 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     document.addEventListener('keydown', function (e) {
+        if (slider.disabled) {
+            return;
+        }
         if (slider !== document.activeElement) {
             if (e.key === 'ArrowLeft') {
                 slider.value--;
-                slider.dispatchEvent(new Event('change'));
+                slider.dispatchEvent(new Event('input'));
                 e.preventDefault();
             } else if (e.key === 'ArrowRight') {
                 slider.value++;
-                slider.dispatchEvent(new Event('change'));
+                slider.dispatchEvent(new Event('input'));
                 e.preventDefault();
             }
         }
