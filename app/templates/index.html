@@ -5,7 +5,7 @@
 <div class="parent">
   <div class="divImage">
     <fieldset>
-      <select id="race" onchange='raceChanged(this.value)'>
+      <select id="race" {% if start_race_button_disabled %} disabled {% endif %} onchange='raceChanged(this.value)'>
         {% for race in races %}
         <option value="{{ race.start_time }}">Race {{ loop.revindex }} - {{ race.start_time }}</option>
         {% endfor %}
@@ -15,7 +15,7 @@
         <img id="image" src="{{ image_src }} " class="coveredImage">
         <canvas id="canvas" class="coveringCanvas" width="1332" height="990"></canvas>
       </div>
-      <input type="range" id="image_index" name="image_index" value="1" min="1" max="{{ max }}" class="slider"/>
+      <input type="range" id="image_index" {% if start_race_button_disabled %} disabled {% endif %} name="image_index" value="1" min="1" max="{{ max }}" class="slider"/>
       <br>
 
 
