@@ -4,7 +4,8 @@ slider.oninput = changeImage;
 slider.focus()
 
 const raceSelect = document.getElementById('race');
-var selectedRaceName = raceSelect.options[raceSelect.selectedIndex].value;
+document.getElementById('deleteRaceInput').value = raceSelect.options[raceSelect.selectedIndex].value;
+var selectedRaceName = raceSelect.options[raceSelect.selectedIndex].text;
 
 function changeImage(e) {
     image.src = image.src.replace(/\d{4}.jpg/, e.target.value.padStart(4, 0) + '.jpg')
